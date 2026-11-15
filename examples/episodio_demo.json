@@ -1,0 +1,83 @@
+{
+  "formato": "a_fondo",
+  "titulo": "GTA 6: ¿a cuántos FPS va a correr y dónde se puede jugar?",
+  "titulo_miniatura": "¿30 O 60 FPS?",
+  "subtitulo_miniatura": "Lo que sabemos hoy",
+  "descripcion": "Faltan días para el lanzamiento de GTA 6 y la pregunta que más se repite en los comentarios es el rendimiento: ¿irá a 30 o a 60 FPS? Repasamos qué dijo Rockstar, qué opinan los analistas técnicos y qué es solo rumor.\n\nAdemás: en qué plataformas sale el 19 de noviembre y qué pasa con la versión de PC.",
+  "etiquetas": ["GTA 6", "GTA VI", "GTA 6 FPS", "GTA 6 PS5 Pro", "GTA 6 PC", "Grand Theft Auto VI", "Rockstar Games", "GTA 6 rendimiento", "GTA 6 lanzamiento"],
+  "temas_clave": ["fps-consola", "ps5-pro-60fps", "plataformas-lanzamiento", "gta6-pc"],
+  "segmentos": [
+    {
+      "capitulo": "Intro",
+      "tarjeta": {"titular": "30 FPS en consola", "detalle": "El modo a 60 FPS todavía está en el aire", "estado": "REPORTADO", "fuente": "Rockstar North vía Flow Games"},
+      "lineas": [
+        {"habla": "B", "texto": "Faltan cuatro días para GTA 6 y la pregunta del millón sigue ahí: ¿treinta o sesenta FPS?"},
+        {"habla": "A", "texto": "Y hoy tenemos la respuesta más honesta posible: lo que está confirmado, lo que es análisis y lo que es puro rumor."},
+        {"habla": "A", "texto": "Bienvenidos a Punto de Control, el podcast de GTA 6. Yo soy Leo."},
+        {"habla": "B", "texto": "Y yo soy Sofi. Vamos al grano."}
+      ]
+    },
+    {
+      "capitulo": "Lo que dijo Rockstar",
+      "tarjeta": {"titular": "Desarrollo a 30 FPS", "detalle": "Rob Nelson: el equipo técnico decidirá si habrá 60 FPS", "estado": "REPORTADO", "fuente": "Flow Games"},
+      "lineas": [
+        {"habla": "A", "texto": "Ojo con este dato. Rob Nelson, codirector de Rockstar North, le contó al creador brasileño Davy Jones que en consolas el juego corre a treinta FPS durante el desarrollo."},
+        {"habla": "B", "texto": "¿Y los sesenta? ¿Los descartó?"},
+        {"habla": "A", "texto": "No. Dijo que tenía que consultarlo con el equipo técnico, para el lanzamiento o para más adelante. Tampoco dio detalles de resolución ni de trazado de rayos."},
+        {"habla": "B", "texto": "O sea, treinta seguro de salida y sesenta en veremos. Me lo apunto."}
+      ]
+    },
+    {
+      "capitulo": "¿Y la PS5 Pro?",
+      "tarjeta": {"titular": "PS5 Pro: CPU solo un 7 % más rápida", "detalle": "Digital Foundry duda de los 60 FPS; un modo a 40 sería el punto medio", "estado": "OPINIÓN", "fuente": "Digital Foundry"},
+      "lineas": [
+        {"habla": "B", "texto": "Mucha gente se compró la PS5 Pro pensando justo en GTA 6. ¿Les sirve de algo?"},
+        {"habla": "A", "texto": "Según Digital Foundry, el cuello de botella es el procesador, no la gráfica. Y la CPU de la Pro es solo un siete por ciento más rápida."},
+        {"habla": "B", "texto": "Entonces más resolución, pero no el doble de fluidez."},
+        {"habla": "A", "texto": "Esa es su lectura. Ellos mismos plantean un modo a cuarenta FPS para teles de ciento veinte hercios como término medio, pero es especulación."},
+        {"habla": "B", "texto": "Y hubo un filtrador que aseguró que en la Pro ya iba a sesenta."},
+        {"habla": "A", "texto": "Eso es un rumor. Rockstar no lo ha confirmado, así que pónganlo en la carpeta de cosas por ver."}
+      ]
+    },
+    {
+      "capitulo": "Dónde se puede jugar",
+      "tarjeta": {"titular": "PS5 y Xbox Series X|S", "detalle": "Lanzamiento el jueves 19 de noviembre de 2026", "estado": "CONFIRMADO", "fuente": "Rockstar Games"},
+      "lineas": [
+        {"habla": "B", "texto": "Plataformas. ¿Dónde lo juego el diecinueve?"},
+        {"habla": "A", "texto": "En PS5 y en Xbox Series X y S. Eso sí lo confirmó Rockstar, y la fecha se reconfirmó en el tráiler de lanzamiento de octubre."},
+        {"habla": "B", "texto": "¿Y en PC?"},
+        {"habla": "A", "texto": "No hay versión de PC anunciada. Con GTA 5, los jugadores de PC esperaron casi año y medio."},
+        {"habla": "B", "texto": "Paciencia, gente de PC. Mucha paciencia."}
+      ]
+    },
+    {
+      "capitulo": "La historia se repite",
+      "tarjeta": {"titular": "GTA 5 también salió a 30", "detalle": "Los 60 FPS llegaron con la versión next-gen de 2022", "estado": "CONFIRMADO", "fuente": "Historial de Rockstar"},
+      "lineas": [
+        {"habla": "B", "texto": "Para ser justos, esto no es nuevo en Rockstar, ¿no?"},
+        {"habla": "A", "texto": "Para nada. GTA 5 salió a treinta en PS4 y Xbox One, y el modo a sesenta llegó con la versión de nueva generación de dos mil veintidós."},
+        {"habla": "B", "texto": "Así que si llegan los sesenta en GTA 6, lo más probable es que sea con una actualización."}
+      ]
+    },
+    {
+      "capitulo": "Cierre",
+      "tarjeta": {"titular": "¿30 FPS es un problema?", "detalle": "Cuéntanos en los comentarios", "estado": "OPINIÓN", "fuente": ""},
+      "lineas": [
+        {"habla": "A", "texto": "Resumen: treinta FPS en consola de salida, sesenta sin decidir, y PC sin anunciar."},
+        {"habla": "B", "texto": "Y ahora les toca a ustedes: ¿treinta FPS es un problema o les da igual con tal de jugarlo ya? Los leemos en los comentarios."},
+        {"habla": "A", "texto": "Nos escuchamos mañana en Punto de Control."}
+      ]
+    }
+  ],
+  "shorts": [
+    {"segmento": 2, "titulo": "¿La PS5 Pro moverá GTA 6 a 60 FPS?", "gancho": "¿60 FPS en PS5 Pro?"},
+    {"segmento": 3, "titulo": "GTA 6: dónde se puede jugar el 19 de noviembre", "gancho": "¿Dónde juego GTA 6?"}
+  ],
+  "fuentes": [
+    {"titulo": "TweakTown — Rockstar says GTA 6 will run at 30 FPS", "url": "https://www.tweaktown.com/news/113337/rockstar-says-gta-6-will-run-at-30-fps-and-its-tech-team-is-still-unsure-about-a-60-fps-mode/index.html"},
+    {"titulo": "Vandal — GTA 6 funciona actualmente a 30 FPS en consolas", "url": "https://vandal.elespanol.com/noticia/2026240015/gta-6-funciona-actualmente-a-30-fps-en-consolas-y-rockstar-no-puede-confirmar-todavia-un-modo-a-60-fps/"},
+    {"titulo": "TweakTown — Don't expect GTA 6 to hit 60 FPS on PS5 Pro", "url": "https://www.tweaktown.com/news/113347/dont-expect-gta-6-to-hit-60-fps-on-ps5-pro-its-faster-gpu-doesnt-solve-the-real-bottleneck/index.html"},
+    {"titulo": "PC Gamer — GTA 6 delayed to November 2026", "url": "https://www.pcgamer.com/games/action/grand-theft-auto-6-is-delayed-to-november-these-extra-months-will-allow-us-to-finish-the-game-with-the-level-of-polish-you-have-come-to-expect-and-deserve"},
+    {"titulo": "tbreak — GTA 6 30fps at launch", "url": "https://tbreak.com/gta-6-30fps-at-launch-rockstar-confirms/"}
+  ]
+}

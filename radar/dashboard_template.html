@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GTA VI Radar</title>
+<style>
+  :root{
+    --bg:#0A0A0B; --surface:#121214; --surface2:#17171A; --border:#232326; --border2:#2E2E33;
+    --text:#F5F5F5; --muted:#A1A1AA; --faint:#71717A;
+    --accent:#F97316; --accent-soft:rgba(249,115,22,.14);
+    --good:#22C55E; --warn:#F59E0B; --crit:#EF4444; --info:#3B82F6;
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--text);
+    font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:1480px;margin:0 auto;padding:0 20px 40px}
+  header{display:flex;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--border);margin-bottom:14px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.04em;font-size:17px}
+  .radar{width:22px;height:22px;border-radius:50%;border:2px solid var(--accent);position:relative;overflow:hidden}
+  .radar::after{content:"";position:absolute;inset:0;background:conic-gradient(from 0deg,transparent 0 300deg,rgba(249,115,22,.75) 360deg);animation:spin 3s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .sub{color:var(--muted);font-size:13px}
+  .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--border2);border-radius:999px;font-size:12.5px;color:var(--muted);background:var(--surface)}
+  .pill b{color:var(--text)}
+  .demo{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.4);color:#FCD34D;padding:8px 12px;border-radius:8px;margin-bottom:12px;font-size:13px}
+  /* filtros */
+  .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 14px}
+  .filters label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+  select,input[type=search],input[type=range]{background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:7px 10px;font:inherit;font-size:13px}
+  input[type=range]{padding:0;accent-color:var(--accent);height:34px}
+  .seg{display:inline-flex;border:1px solid var(--border2);border-radius:8px;overflow:hidden}
+  .seg button{background:var(--surface);color:var(--muted);border:0;padding:7px 11px;font:inherit;font-size:13px;cursor:pointer}
+  .seg button[aria-pressed=true]{background:var(--accent-soft);color:var(--text);font-weight:600}
+  /* kpis */
+  .kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px}
+  .kpi .v{font-size:24px;font-weight:750;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:12px;color:var(--muted)}
+  /* layout */
+  .grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(320px,1fr);gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px;font-weight:650;display:flex;align-items:center;gap:8px}
+  .card h2 .count{color:var(--faint);font-weight:500}
+  .tabs{display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border)}
+  .tabs button{background:none;border:0;color:var(--muted);padding:8px 12px;font:inherit;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs button[aria-selected=true]{color:var(--text);border-color:var(--accent)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;color:var(--muted);font-size:12.5px}
+  /* vídeos */
+  .vid{display:grid;grid-template-columns:168px minmax(0,1fr) 64px;gap:12px;padding:10px 0;border-top:1px solid var(--border)}
+  .vid:first-child{border-top:0}
+  .thumb{width:168px;aspect-ratio:16/9;border-radius:8px;background:var(--surface2);object-fit:cover;display:block}
+  .vt{font-weight:650;font-size:14.5px;line-height:1.3;margin-bottom:3px}
+  .meta{color:var(--muted);font-size:12.5px;display:flex;gap:8px;flex-wrap:wrap}
+  .metrics{display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin:5px 0;font-variant-numeric:tabular-nums}
+  .metrics b{color:var(--text);font-weight:650}
+  .badges{display:flex;gap:5px;flex-wrap:wrap;margin:4px 0}
+  .b{font-size:11.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--border2);color:var(--muted);white-space:nowrap}
+  .b.s-good{color:#86EFAC;border-color:rgba(34,197,94,.45)}
+  .b.s-warn{color:#FCD34D;border-color:rgba(245,158,11,.5)}
+  .b.s-crit{color:#FCA5A5;border-color:rgba(239,68,68,.55)}
+  .b.s-info{color:#93C5FD;border-color:rgba(59,130,246,.5)}
+  .sum{color:#D4D4D8;font-size:13px;margin-top:3px}
+  .score{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px}
+  .score .n{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .score .t{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+  details.br summary{cursor:pointer;color:var(--faint);font-size:12px;margin-top:4px}
+  .brk{display:grid;grid-template-columns:90px 1fr 34px;gap:6px 8px;align-items:center;font-size:12px;color:var(--muted);margin-top:6px;max-width:420px}
+  .track{height:6px;background:var(--surface2);border-radius:4px;overflow:hidden}
+  .fill{height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+  /* listas laterales */
+  .alert{display:grid;grid-template-columns:auto 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--border)}
+  .alert:first-of-type{border-top:0}
+  .sev{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap;height:fit-content}
+  .sev.critical{background:rgba(239,68,68,.16);color:#FCA5A5}
+  .sev.high{background:rgba(245,158,11,.16);color:#FCD34D}
+  .sev.medium{background:rgba(59,130,246,.16);color:#93C5FD}
+  .sev.low{background:rgba(161,161,170,.14);color:var(--muted)}
+  .at{font-weight:600;font-size:13px;line-height:1.3}
+  .am{color:var(--muted);font-size:12px}
+  .hbar{display:grid;grid-template-columns:132px 1fr 70px;gap:8px;align-items:center;font-size:12.5px;padding:3px 0;border-radius:6px}
+  .hbar:hover,.hbar:focus{background:var(--surface2);outline:none}
+  .hbar .lab{color:#D4D4D8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hbar .val{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .hbar .val b{color:var(--text)}
+  .bar{height:10px;background:var(--accent);border-radius:0 4px 4px 0;min-width:2px}
+  .up{color:#86EFAC}
+  svg text{fill:var(--faint);font-size:10.5px}
+  .gridline{stroke:var(--border);stroke-width:1}
+  .colbar{fill:var(--accent)}
+  .colbar:hover,.colbar:focus{fill:#FB923C;outline:none}
+  .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .tbl th{text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border2);padding:6px 6px}
+  .tbl td{border-bottom:1px solid var(--border);padding:6px 6px;font-variant-numeric:tabular-nums}
+  .tbl td.num,.tbl th.num{text-align:right}
+  details.tv summary{color:var(--faint);font-size:12px;cursor:pointer;margin-top:8px}
+  .news{padding:8px 0;border-top:1px solid var(--border)} .news:first-child{border-top:0}
+  .md h1,.md h2,.md h3{font-size:15px;margin:14px 0 6px;color:var(--text);text-transform:none;letter-spacing:0}
+  .md p,.md li{color:#D4D4D8} .md a{color:#93C5FD}
+  .q{padding:6px 0;border-top:1px solid var(--border);font-size:13px} .q:first-child{border-top:0}
+  .empty{color:var(--faint);font-size:13px;padding:12px 0}
+  #tip{position:fixed;pointer-events:none;background:#1C1C20;border:1px solid var(--border2);border-radius:8px;padding:7px 10px;font-size:12px;display:none;z-index:9;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+  #tip b{display:block;font-size:14px}
+  #tip span{color:var(--muted)}
+  @media (max-width:1100px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}.vid{grid-template-columns:110px 1fr 48px}.thumb{width:110px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><div class="radar" aria-hidden="true"></div>GTA VI RADAR</div>
+    <div class="sub" id="chan"></div>
+    <div class="spacer"></div>
+    <span class="pill" id="countdown"></span>
+    <span class="pill" id="updated"></span>
+  </header>
+  <div id="demo" class="demo" hidden>Datos de demostración (inventados) para ver el panel. Con tus claves, el Radar se llena con datos reales cada hora.</div>
+
+  <div class="filters" role="group" aria-label="Filtros">
+    <label>Periodo
+      <span class="seg" id="f-period">
+        <button data-v="6">6 h</button><button data-v="24" aria-pressed="true">24 h</button><button data-v="48">48 h</button>
+      </span>
+    </label>
+    <label>Idioma
+      <select id="f-lang"><option value="">Todos</option><option value="es">Español</option><option value="en">Inglés</option><option value="other">Otros</option></select>
+    </label>
+    <label>Formato
+      <select id="f-fmt"><option value="">Todos</option><option value="long">Vídeos largos</option><option value="short">Shorts</option></select>
+    </label>
+    <label>Tema <select id="f-topic"><option value="">Todos</option></select></label>
+    <label>Riesgo
+      <select id="f-risk"><option value="">Cualquiera</option><option value="low">Solo bajo</option><option value="medium">Medio o más</option><option value="high">Alto o más</option></select>
+    </label>
+    <label>Score mínimo <input type="range" id="f-score" min="0" max="90" step="5" value="0" aria-describedby="f-score-v"></label>
+    <span class="sub" id="f-score-v">0</span>
+    <label style="flex:1;min-width:180px">Buscar <input type="search" id="f-q" placeholder="título, canal, entidad…"></label>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Indicadores"></section>
+
+  <div class="grid">
+    <main>
+      <div class="card">
+        <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="true" data-tab="radar">Radar de contenido</button>
+          <button role="tab" aria-selected="false" data-tab="creators">Creadores</button>
+          <button role="tab" aria-selected="false" data-tab="news">Medios</button>
+          <button role="tab" aria-selected="false" data-tab="briefing">Briefing</button>
+          <button role="tab" aria-selected="false" data-tab="episodes">Episodios</button>
+        </div>
+        <div data-panel="radar">
+          <div class="toolbar"><span id="vcount"></span>
+            <span style="flex:1"></span>
+            <button id="csv" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;cursor:pointer;margin-right:10px">Exportar CSV</button>
+            <label>Ordenar <select id="sort">
+              <option value="score">Score global</option><option value="momentum">Momentum</option>
+              <option value="velocity">Vistas/hora</option><option value="views">Vistas</option><option value="recent">Más recientes</option>
+            </select></label>
+          </div>
+          <div id="videos"></div>
+        </div>
+        <div data-panel="creators" hidden><div id="creators"></div></div>
+        <div data-panel="news" hidden><div id="news"></div></div>
+        <div data-panel="briefing" hidden><div id="briefing" class="md"></div></div>
+        <div data-panel="episodes" hidden><div id="episodes"></div></div>
+      </div>
+    </main>
+    <aside>
+      <div class="card"><h2>Alertas <span class="count" id="acount"></span></h2><div id="alerts"></div></div>
+      <div class="card"><h2>Temas · vídeos en el periodo</h2><div id="topics"></div>
+        <details class="tv"><summary>Ver tabla</summary><div id="topics-table"></div></details></div>
+      <div class="card"><h2>Cobertura por hora · vídeos publicados</h2><div id="hourly"></div>
+        <details class="tv"><summary>Ver tabla</summary><div id="hourly-table"></div></details></div>
+      <div class="card"><h2>Creadores emergentes</h2><div id="emerging"></div></div>
+      <div class="card"><h2>Lo que pregunta la comunidad</h2><div id="community"></div></div>
+    </aside>
+  </div>
+</div>
+<div id="tip" role="tooltip"></div>
+
+<script>
+const DATA = /*__DATA__*/null;
+const $ = s => document.querySelector(s);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else n.setAttribute(k, v);
+  }
+  for (const k of kids.flat()) if (k != null) n.append(k instanceof Node ? k : document.createTextNode(String(k)));
+  return n;
+};
+const safeUrl = u => (typeof u === 'string' && /^https?:\/\//i.test(u)) ? u : null;
+const nf = new Intl.NumberFormat('es-ES');
+const fmt = n => n == null ? '—' : n >= 1e6 ? (n / 1e6).toFixed(1).replace('.', ',') + ' M' : n >= 1e4 ? Math.round(n / 1e3) + ' k' : nf.format(Math.round(n));
+const ago = iso => { if (!iso) return ''; const h = (Date.now() - new Date(iso)) / 36e5;
+  return h < 1 ? `hace ${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `hace ${Math.round(h)} h` : `hace ${Math.round(h / 24)} d`; };
+const TOPIC = {lanzamiento:'Lanzamiento',precio_ediciones:'Precio y ediciones',plataformas_pc:'Plataformas / PC',rendimiento_fps:'Rendimiento y FPS',mapa:'Mapa',personajes:'Personajes',historia:'Historia',gameplay:'Gameplay',vehiculos:'Vehículos',online:'GTA Online',trailer:'Tráileres',filtraciones_rumores:'Filtraciones y rumores',comparativa_gta5:'GTA 5 vs GTA 6',graficos_tecnologia:'Gráficos y tecnología',polemica:'Polémicas',humor_memes:'Memes',reacciones:'Reacciones',guias_trucos:'Guías y trucos',ventas_negocio:'Ventas y negocio',otros:'Otros'};
+const TYPE = {trailer:'Tráiler',gameplay:'Gameplay',leak:'Filtración',rumor:'Rumor',news:'Noticia',analysis:'Análisis',theory:'Teoría',reaction:'Reacción',review:'Review',comparison:'Comparativa',meme:'Meme',interview:'Entrevista',stream:'Directo',short:'Short',podcast:'Podcast',guide:'Guía',other:'Otro'};
+const RISK = {low:['s-good','● Riesgo bajo'],medium:['s-info','◆ Riesgo medio'],high:['s-warn','▲ Riesgo alto'],critical:['s-crit','■ Riesgo crítico']};
+const VER = {official:['s-info','Oficial'],reported:['','Reportado por medios'],unverified:['s-warn','Sin verificar'],opinion:['','Opinión']};
+const SEVL = {critical:'■ Crítica',high:'▲ Alta',medium:'◆ Media',low:'○ Baja'};
+const RISKN = {low:0,medium:1,high:2,critical:3};
+
+const state = {period: 24, lang: '', fmt: '', topic: '', risk: '', score: 0, q: '', sort: 'score'};
+
+// ---------- tooltip
+const tip = $('#tip');
+function showTip(e, value, label) {
+  tip.replaceChildren(el('b', {text: value}), el('span', {text: label}));
+  tip.style.display = 'block';
+  const r = e.target.getBoundingClientRect ? e.target.getBoundingClientRect() : null;
+  const x = e.clientX ?? (r ? r.left + r.width / 2 : 0), y = e.clientY ?? (r ? r.top : 0);
+  tip.style.left = Math.min(window.innerWidth - tip.offsetWidth - 8, x + 12) + 'px';
+  tip.style.top = (y - tip.offsetHeight - 10) + 'px';
+}
+const hideTip = () => tip.style.display = 'none';
+function hover(node, value, label) {
+  node.tabIndex = 0;
+  node.addEventListener('pointermove', e => showTip(e, value, label));
+  node.addEventListener('focus', e => showTip(e, value, label));
+  node.addEventListener('pointerleave', hideTip); node.addEventListener('blur', hideTip);
+}
+
+// ---------- filtros
+function filtered() {
+  const cut = Date.now() - state.period * 36e5;
+  const q = state.q.trim().toLowerCase();
+  return DATA.videos.filter(v => {
+    if (new Date(v.published_at) < cut) return false;
+    const lg = (v.language || '').slice(0, 2);
+    if (state.lang === 'other' ? ['es', 'en'].includes(lg) : state.lang && lg !== state.lang) return false;
+    if (state.fmt === 'short' && !v.is_short) return false;
+    if (state.fmt === 'long' && v.is_short) return false;
+    if (state.topic && !(v.topics || []).includes(state.topic)) return false;
+    const rk = RISKN[v.risk || 'low'];
+    if (state.risk === 'low' && rk > 0) return false;
+    if (state.risk === 'medium' && rk < 1) return false;
+    if (state.risk === 'high' && rk < 2) return false;
+    if ((v.score || 0) < state.score) return false;
+    if (q && !`${v.title} ${v.channel} ${(v.entities || []).join(' ')} ${v.summary || ''}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function render() {
+  const vids = filtered();
+  const cut = Date.now() - state.period * 36e5;
+  renderKpis(vids, cut);
+  renderVideos(vids);
+  renderTopics(vids);
+  renderHourly(vids);
+  renderAlerts(cut);
+  renderNews(cut);
+}
+
+function renderKpis(vids, cut) {
+  const creators = new Set(vids.map(v => v.channel));
+  const views = vids.reduce((a, v) => a + (v.views || 0), 0);
+  const maxv = vids.reduce((a, v) => Math.max(a, v.velocity || 0), 0);
+  const news = DATA.news.filter(n => new Date(n.published_at) >= cut).length;
+  const alerts = DATA.alerts.filter(a => new Date(a.created_at) >= cut && ['critical', 'high'].includes(a.severity)).length;
+  const items = [[fmt(vids.length), `Vídeos (${state.period} h)`], [fmt(creators.size), 'Creadores activos'],
+    [fmt(views), 'Vistas acumuladas'], [fmt(maxv), 'Vistas/hora (máx.)'], [fmt(news), 'Noticias en medios'],
+    [fmt(alerts), 'Alertas altas o críticas']];
+  $('#kpis').replaceChildren(...items.map(([v, l]) => el('div', {class: 'kpi'}, el('div', {class: 'v', text: v}), el('div', {class: 'l', text: l}))));
+}
+
+function renderVideos(vids) {
+  const key = {score: v => v.score || 0, momentum: v => v.momentum || 0, velocity: v => v.velocity || 0,
+    views: v => v.views || 0, recent: v => +new Date(v.published_at)}[state.sort];
+  const list = [...vids].sort((a, b) => key(b) - key(a)).slice(0, 120);
+  $('#vcount').textContent = `${vids.length} vídeos · mostrando ${list.length}`;
+  if (!list.length) { $('#videos').replaceChildren(el('div', {class: 'empty', text: 'Nada con estos filtros. Prueba a ampliar el periodo o bajar el score mínimo.'})); return; }
+  $('#videos').replaceChildren(...list.map(v => {
+    const url = safeUrl(v.url), th = safeUrl(v.thumb);
+    const badges = el('div', {class: 'badges'},
+      v.content_type ? el('span', {class: 'b', text: TYPE[v.content_type] || v.content_type}) : null,
+      ...(v.topics || []).map(t => el('span', {class: 'b', text: TOPIC[t] || t})),
+      v.risk ? el('span', {class: 'b ' + RISK[v.risk][0], text: RISK[v.risk][1]}) : null,
+      v.verification && VER[v.verification] ? el('span', {class: 'b ' + VER[v.verification][0], text: VER[v.verification][1]}) : null,
+      v.is_short ? el('span', {class: 'b', text: 'Short'}) : null);
+    const comps = [['Momentum', v.momentum], ['Engagement', v.engagement], ['Relevancia', v.relevance],
+      ['Autoridad', v.authority], ['Novedad', v.novelty], ['Riesgo', v.risk_score]];
+    const brk = el('details', {class: 'br'}, el('summary', {text: 'Desglose del score'}),
+      el('div', {class: 'brk'}, ...comps.flatMap(([l, x]) => [el('span', {text: l}),
+        el('div', {class: 'track'}, el('div', {class: 'fill', style: `width:${Math.max(0, Math.min(100, x || 0))}%`})),
+        el('span', {text: x == null ? '—' : Math.round(x)})])),
+      (v.claims || []).length ? el('div', {class: 'am', style: 'margin-top:6px'}, 'Afirma: ' + v.claims.join(' · ')) : null);
+    return el('article', {class: 'vid'},
+      url ? el('a', {href: url, target: '_blank', rel: 'noopener'}, th ? el('img', {class: 'thumb', src: th, alt: '', loading: 'lazy'}) : el('div', {class: 'thumb'})) : el('div', {class: 'thumb'}),
+      el('div', {},
+        el('div', {class: 'vt'}, url ? el('a', {href: url, target: '_blank', rel: 'noopener', text: v.title}) : v.title),
+        el('div', {class: 'meta'}, el('span', {text: v.channel || '—'}),
+          v.channel_subs != null ? el('span', {text: `${fmt(v.channel_subs)} subs`}) : null,
+          el('span', {text: ago(v.published_at)}), v.language ? el('span', {text: v.language.toUpperCase()}) : null,
+          v.found_via ? el('span', {text: 'vía ' + v.found_via}) : null),
+        el('div', {class: 'metrics'}, el('span', {}, el('b', {text: fmt(v.velocity)}), ' vistas/h'),
+          el('span', {}, el('b', {text: fmt(v.views)}), ' vistas'), el('span', {}, el('b', {text: fmt(v.likes)}), ' likes'),
+          el('span', {}, el('b', {text: fmt(v.comments)}), ' coment.')),
+        badges, v.summary ? el('div', {class: 'sum', text: v.summary}) : null, brk),
+      el('div', {class: 'score'}, el('div', {class: 'n', text: v.score == null ? '—' : Math.round(v.score)}), el('div', {class: 't', text: 'score'})));
+  }));
+}
+
+function renderTopics(vids) {
+  const cur = {}, half = {}; const mid = Date.now() - state.period * 36e5 / 2;
+  vids.forEach(v => (v.topics || []).forEach(t => { cur[t] = (cur[t] || 0) + 1; if (new Date(v.published_at) >= mid) half[t] = (half[t] || 0) + 1; }));
+  const rows = Object.entries(cur).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  if (!rows.length) { $('#topics').replaceChildren(el('div', {class: 'empty', text: 'Sin datos en el periodo.'})); $('#topics-table').replaceChildren(); return; }
+  const max = rows[0][1];
+  $('#topics').replaceChildren(...rows.map(([t, n]) => {
+    const recent = half[t] || 0, older = n - recent, g = (recent + 1) / (older + 1);
+    const row = el('div', {class: 'hbar', role: 'button'},
+      el('span', {class: 'lab', text: TOPIC[t] || t}),
+      el('div', {}, el('div', {class: 'bar', style: `width:${(n / max * 100).toFixed(1)}%`})),
+      el('span', {class: 'val'}, el('b', {text: n}), g >= 1.5 ? el('span', {class: 'up', text: ` ↑x${g.toFixed(1)}`}) : null));
+    hover(row, `${n} vídeos`, `${TOPIC[t] || t} · ${recent} en la mitad más reciente del periodo`);
+    row.addEventListener('click', () => { state.topic = state.topic === t ? '' : t; $('#f-topic').value = state.topic; render(); });
+    return row;
+  }));
+  $('#topics-table').replaceChildren(el('table', {class: 'tbl'}, el('tr', {}, el('th', {text: 'Tema'}), el('th', {class: 'num', text: 'Vídeos'})),
+    ...rows.map(([t, n]) => el('tr', {}, el('td', {text: TOPIC[t] || t}), el('td', {class: 'num', text: n})))));
+}
+
+function renderHourly(vids) {
+  const H = state.period, now = new Date(); now.setMinutes(0, 0, 0);
+  const buckets = [];
+  for (let i = H - 1; i >= 0; i--) buckets.push({t: new Date(now - i * 36e5), n: 0});
+  vids.forEach(v => { const d = new Date(v.published_at); d.setMinutes(0, 0, 0);
+    const i = buckets.findIndex(b => +b.t === +d); if (i >= 0) buckets[i].n++; });
+  const W = 340, Ht = 120, pad = {l: 26, r: 14, b: 18, t: 6}, iw = W - pad.l - pad.r, ih = Ht - pad.b - pad.t;
+  const max = Math.max(1, ...buckets.map(b => b.n));
+  const step = Math.max(1, Math.ceil(max / 3));
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('viewBox', `0 0 ${W} ${Ht}`); svg.setAttribute('width', '100%');
+  svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Vídeos publicados por hora');
+  const mk = (tag, a) => { const n = document.createElementNS(ns, tag); for (const k in a) n.setAttribute(k, a[k]); return n; };
+  for (let y = 0; y <= max; y += step) { const yy = pad.t + ih - (y / max) * ih;
+    svg.append(mk('line', {x1: pad.l, x2: W - pad.r, y1: yy, y2: yy, class: 'gridline'}));
+    const tx = mk('text', {x: pad.l - 6, y: yy + 3, 'text-anchor': 'end'}); tx.textContent = y; svg.append(tx); }
+  const bw = iw / buckets.length, gap = Math.min(2, bw * 0.3);
+  buckets.forEach((b, i) => {
+    const h = (b.n / max) * ih, x = pad.l + i * bw + gap / 2, w = Math.max(1, bw - gap), y = pad.t + ih - h;
+    if (b.n > 0) {
+      const r = Math.min(4, w / 2, h);
+      const p = mk('path', {class: 'colbar', d: `M${x},${y + h} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h} Z`});
+      hover(p, `${b.n} vídeos`, b.t.toLocaleString('es-ES', {weekday: 'short', hour: '2-digit', minute: '2-digit'}));
+      svg.append(p);
+    }
+    const every = H <= 6 ? 1 : H <= 24 ? 6 : 12;
+    if (b.t.getHours() % every === 0) { const tx = mk('text', {x: x + w / 2, y: Ht - 4, 'text-anchor': 'middle'});
+      tx.textContent = b.t.getHours() + 'h'; svg.append(tx); }
+  });
+  $('#hourly').replaceChildren(svg);
+  $('#hourly-table').replaceChildren(el('table', {class: 'tbl'}, el('tr', {}, el('th', {text: 'Hora'}), el('th', {class: 'num', text: 'Vídeos'})),
+    ...buckets.filter(b => b.n).map(b => el('tr', {}, el('td', {text: b.t.toLocaleString('es-ES', {day: '2-digit', hour: '2-digit', minute: '2-digit'})}), el('td', {class: 'num', text: b.n})))));
+}
+
+function renderAlerts(cut) {
+  const SR = {critical: 3, high: 2, medium: 1, low: 0};
+  const list = DATA.alerts.filter(a => new Date(a.created_at) >= cut)
+    .sort((a, b) => (SR[b.severity] - SR[a.severity]) || (new Date(b.created_at) - new Date(a.created_at)));
+  $('#acount').textContent = list.length ? `· ${list.length}` : '';
+  if (!list.length) { $('#alerts').replaceChildren(el('div', {class: 'empty', text: 'Sin alertas en el periodo.'})); return; }
+  $('#alerts').replaceChildren(...list.slice(0, 25).map(a => { const u = safeUrl(a.url);
+    return el('div', {class: 'alert'}, el('span', {class: 'sev ' + a.severity, text: SEVL[a.severity] || a.severity}),
+      el('div', {}, el('div', {class: 'at'}, u ? el('a', {href: u, target: '_blank', rel: 'noopener', text: a.title}) : a.title),
+        el('div', {class: 'am', text: `${a.message || ''} · ${ago(a.created_at)}`}))); }));
+}
+
+function renderNews(cut) {
+  const lg = state.lang;
+  const list = DATA.news.filter(n => new Date(n.published_at) >= cut && (!lg || (lg === 'other' ? !['es', 'en'].includes(n.language) : n.language === lg)));
+  if (!list.length) { $('#news').replaceChildren(el('div', {class: 'empty', text: 'Sin noticias en el periodo.'})); return; }
+  $('#news').replaceChildren(...list.map(n => { const u = safeUrl(n.url);
+    return el('div', {class: 'news'}, el('div', {class: 'vt'}, u ? el('a', {href: u, target: '_blank', rel: 'noopener', text: n.title}) : n.title),
+      el('div', {class: 'meta'}, el('span', {text: n.source}), el('span', {text: ago(n.published_at)}),
+        n.official ? el('span', {class: 'b s-info', text: 'Oficial'}) : null,
+        n.verification && VER[n.verification] ? el('span', {class: 'b ' + VER[n.verification][0], text: VER[n.verification][1]}) : null),
+      n.summary ? el('div', {class: 'sum', text: n.summary}) : null); }));
+}
+
+function renderStatic() {
+  $('#chan').textContent = `${DATA.channel?.nombre || ''} · ${DATA.channel?.subtitulo || ''}`;
+  $('#demo').hidden = !DATA.demo;
+  const upd = new Date(DATA.generated_at);
+  $('#updated').replaceChildren('Actualizado ', el('b', {text: ago(DATA.generated_at)}));
+  $('#updated').title = upd.toLocaleString('es-ES');
+  const rel = new Date(DATA.release_date + 'T00:00:00'), d = (rel - Date.now()) / 36e5;
+  $('#countdown').replaceChildren(...(d > 0 ? ['Lanzamiento en ', el('b', {text: `${Math.floor(d / 24)} d ${Math.floor(d % 24)} h`})]
+    : ['GTA VI disponible · ', el('b', {text: `día ${Math.floor(-d / 24) + 1}`})]));
+  // temas en el selector
+  const ts = new Set(); DATA.videos.forEach(v => (v.topics || []).forEach(t => ts.add(t)));
+  [...ts].sort((a, b) => (TOPIC[a] || a).localeCompare(TOPIC[b] || b)).forEach(t => $('#f-topic').append(el('option', {value: t, text: TOPIC[t] || t})));
+  // creadores
+  const cr = DATA.creators || [];
+  $('#creators').replaceChildren(cr.length ? el('table', {class: 'tbl'},
+    el('tr', {}, ...['Creador', 'Suscriptores', 'Vídeos GTA 6', 'Vistas', 'Vistas/h máx.', 'Mejor score'].map((h, i) => el('th', {class: i ? 'num' : '', text: h}))),
+    ...cr.map(c => el('tr', {}, el('td', {}, c.name || '—', c.is_official ? el('span', {class: 'b s-info', style: 'margin-left:6px', text: 'Oficial'}) : null),
+      el('td', {class: 'num', text: fmt(c.subscribers)}), el('td', {class: 'num', text: c.n_videos}), el('td', {class: 'num', text: fmt(c.views)}),
+      el('td', {class: 'num', text: fmt(c.max_velocity)}), el('td', {class: 'num', text: c.best_score == null ? '—' : Math.round(c.best_score)}))))
+    : el('div', {class: 'empty', text: 'Aún no hay creadores.'}));
+  const em = DATA.emerging || [];
+  $('#emerging').replaceChildren(...(em.length ? em.slice(0, 8).map(c => el('div', {class: 'q'}, el('b', {text: c.name}),
+    el('div', {class: 'am', text: `${fmt(c.subscribers)} subs · ${fmt(c.views)} vistas en vídeos de GTA 6 (x${((c.views || 0) / Math.max(1, c.subscribers || 1)).toFixed(1)})`})))
+    : [el('div', {class: 'empty', text: 'Ningún creador pequeño despuntando ahora mismo.'})]));
+  const cq = DATA.community_questions || {};
+  const qs = cq.preguntas || [];
+  $('#community').replaceChildren(...(qs.length ? [...qs.map(q => el('div', {class: 'q'}, q.pregunta,
+    q.frecuencia ? el('span', {class: 'b', style: 'margin-left:6px', text: q.frecuencia}) : null)),
+    ...(cq.opiniones || []).length ? [el('div', {class: 'am', style: 'margin-top:8px', text: 'Opiniones dominantes: ' + cq.opiniones.join(' · ')})] : []]
+    : [el('div', {class: 'empty', text: 'Se rellena con el briefing diario.'})]));
+  // briefing (markdown sencillo, sin HTML)
+  $('#briefing').replaceChildren(...(DATA.briefing ? mdToNodes(DATA.briefing.markdown) : [el('div', {class: 'empty', text: 'Aún no hay briefing. Se genera una vez al día.'})]));
+  const eps = DATA.episodes || [];
+  $('#episodes').replaceChildren(...(eps.length ? eps.map(e => el('div', {class: 'news'},
+    el('div', {class: 'vt', text: e.title}), el('div', {class: 'meta'}, el('span', {text: e.date}), el('span', {text: e.format}),
+      e.youtube_id ? el('a', {href: `https://studio.youtube.com/video/${encodeURIComponent(e.youtube_id)}/edit`, target: '_blank', rel: 'noopener', text: 'Abrir en YouTube Studio'}) : null)))
+    : [el('div', {class: 'empty', text: 'Todavía no se ha publicado ningún episodio.'})]));
+}
+
+function inline(text) {
+  const out = []; const re = /\*\*(.+?)\*\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s)]+)/g; let m, last = 0;
+  while ((m = re.exec(text))) { if (m.index > last) out.push(text.slice(last, m.index));
+    if (m[1]) out.push(el('b', {text: m[1]})); else if (m[2]) out.push(el('a', {href: m[3], target: '_blank', rel: 'noopener', text: m[2]}));
+    else out.push(el('a', {href: m[4], target: '_blank', rel: 'noopener', text: m[4]})); last = re.lastIndex; }
+  if (last < text.length) out.push(text.slice(last)); return out;
+}
+function mdToNodes(md) {
+  const nodes = []; let list = null;
+  for (const raw of (md || '').split('\n')) { const line = raw.trimEnd();
+    const h = line.match(/^#{1,4}\s+(.*)/), li = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/);
+    if (li) { if (!list) { list = el('ul'); nodes.push(list); } list.append(el('li', {}, ...inline(li[1]))); continue; }
+    list = null;
+    if (h) nodes.push(el('h3', {}, ...inline(h[1]))); else if (line.trim()) nodes.push(el('p', {}, ...inline(line))); }
+  return nodes;
+}
+
+// ---------- eventos
+document.querySelectorAll('#f-period button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#f-period button').forEach(x => x.setAttribute('aria-pressed', x === b));
+  state.period = +b.dataset.v; render(); }));
+[['#f-lang', 'lang'], ['#f-fmt', 'fmt'], ['#f-topic', 'topic'], ['#f-risk', 'risk'], ['#sort', 'sort']].forEach(([s, k]) =>
+  $(s).addEventListener('change', e => { state[k] = e.target.value; render(); }));
+$('#f-score').addEventListener('input', e => { state.score = +e.target.value; $('#f-score-v').textContent = e.target.value; render(); });
+$('#f-q').addEventListener('input', e => { state.q = e.target.value; render(); });
+document.querySelectorAll('[role=tab]').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('[role=tab]').forEach(x => x.setAttribute('aria-selected', x === t));
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== t.dataset.tab); }));
+
+$('#csv').addEventListener('click', () => {
+  const cols = ['title', 'channel', 'url', 'published_at', 'views', 'velocity', 'likes', 'comments', 'score', 'momentum',
+    'content_type', 'topics', 'risk', 'verification', 'summary'];
+  const esc = x => `"${String(Array.isArray(x) ? x.join(' | ') : x ?? '').replace(/"/g, '""')}"`;
+  const rows = [cols.join(',')].concat(filtered().map(v => cols.map(c => esc(v[c])).join(',')));
+  const a = el('a', {href: URL.createObjectURL(new Blob(['\ufeff' + rows.join('\n')], {type: 'text/csv'})),
+    download: `gta6-radar-${new Date().toISOString().slice(0, 10)}.csv`});
+  document.body.append(a); a.click(); a.remove();
+});
+renderStatic(); render();
+</script>
+</body>
+</html>

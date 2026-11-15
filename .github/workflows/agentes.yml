@@ -1,0 +1,87 @@
+name: Agentes (operaciones y estrategia)
+
+on:
+  # Agente de Operaciones: informe diario + diagnóstico automático cuando algo falla
+  schedule:
+    - cron: "23 7 * * *"        # 07:23 UTC = 08:23 en España → informe de salud diario
+    - cron: "37 8 * * 1"        # lunes 08:37 UTC → Agente de Estrategia (semanal)
+  workflow_run:
+    workflows: ["Radar GTA 6", "Podcast diario GTA 6"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      agente:
+        description: "¿Qué agente ejecutar?"
+        type: choice
+        options: [operaciones, estrategia]
+        default: operaciones
+
+permissions:
+  contents: write
+  actions: read
+  issues: write
+
+jobs:
+  operaciones:
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '23 7 * * *') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure') ||
+      (github.event_name == 'workflow_dispatch' && inputs.agente == 'operaciones')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Recuperar datos
+        run: bash tools/datos_git.sh traer
+      - name: Agente de Operaciones
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            python -m agentes.operaciones --fallo
+          else
+            python -m agentes.operaciones
+          fi
+
+  estrategia:
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '37 8 * * 1') ||
+      (github.event_name == 'workflow_dispatch' && inputs.agente == 'estrategia')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: datos-radar
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Recuperar datos
+        run: bash tools/datos_git.sh traer
+      - name: Agente de Estrategia
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python -m agentes.estrategia
+      - name: Guardar datos
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash tools/datos_git.sh guardar

@@ -1,0 +1,89 @@
+name: Podcast diario GTA 6
+
+on:
+  schedule:
+    - cron: "41 13 * * *"       # 13:41 UTC = 14:41 en España · 7:41 en México
+  workflow_dispatch:
+    inputs:
+      subir:
+        description: "¿Subir a YouTube?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos-radar
+  cancel-in-progress: false
+
+jobs:
+  podcast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar FFmpeg y dependencias
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install -r requirements.txt
+
+      - name: Recuperar datos del Radar
+        run: bash tools/datos_git.sh traer
+
+      - name: Radar + briefing del día
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+        run: python -m radar.run --briefing
+
+      - name: Crear episodio, Shorts y miniatura
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.subir }}" = "false" ]; then
+            python -m podcast.run --sin-subir
+          else
+            python -m podcast.run
+          fi
+
+      - name: Guardar datos
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash tools/datos_git.sh guardar
+
+      - name: Vídeos para descargar (TikTok, revisión)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: episodio-${{ github.run_number }}
+          path: |
+            output/*/episodio.mp4
+            output/*/short_*.mp4
+            output/*/miniatura.jpg
+            output/*/guion.json
+            output/*/dossier.md
+            output/*/editor.md
+            output/*/descripcion.txt
+          retention-days: 7
+          if-no-files-found: ignore

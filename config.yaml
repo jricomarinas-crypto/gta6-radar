@@ -1,0 +1,180 @@
+# ============================================================
+#  GTA 6 RADAR + PODCAST — configuración
+#  Todo lo que quieras cambiar sin tocar código está aquí.
+#  Las claves secretas NO van aquí: van en los "Secrets" de GitHub
+#  (o en un archivo .env si lo ejecutas en tu ordenador).
+# ============================================================
+
+canal:
+  nombre: "PUNTO DE CONTROL"          # marca que aparece en vídeos y miniaturas
+  subtitulo: "El podcast de GTA 6"
+  idioma: "es-419"                    # español latinoamericano
+  zona_horaria: "America/Mexico_City" # para fechas dentro del vídeo
+
+# ------------------------------------------------------------
+#  RADAR — qué vigila y cómo puntúa
+# ------------------------------------------------------------
+radar:
+  # Búsquedas en YouTube. Se van rotando: cada ejecución usa unas pocas.
+  # Google permite 100 búsquedas/día por proyecto → no subas mucho busquedas_por_ejecucion.
+  palabras_clave:
+    - "GTA 6"
+    - "GTA VI"
+    - "GTA 6 español"
+    - "GTA 6 gameplay"
+    - "GTA 6 noticias"
+    - "GTA 6 mapa"
+    - "GTA 6 filtración"
+    - "GTA 6 leak"
+    - "GTA 6 PS5 Pro"
+    - "GTA 6 PC"
+    - "GTA 6 FPS"
+    - "GTA 6 Lucia Jason"
+    - "GTA 6 vs GTA 5"
+    - "Grand Theft Auto VI"
+    - "GTA 6 secretos"
+    - "GTA 6 review"
+  busquedas_por_ejecucion: 3          # 3 x 24 ejecuciones = 72 búsquedas/día (límite 100)
+  ventana_busqueda_horas: 48          # solo vídeos publicados en las últimas N horas
+  seguimiento_dias: 7                 # actualiza métricas de vídeos de los últimos N días
+  regiones_tendencias: ["MX", "ES", "AR", "CO", "US"]   # tendencias de Gaming por país (1 unidad cada una)
+
+  # Canales que se vigilan SIEMPRE (barato: 1 unidad por canal).
+  # Añade aquí los creadores de GTA que quieras seguir, con su @handle de YouTube.
+  canales_oficiales:
+    - "@RockstarGames"
+  creadores_prioritarios: []
+  #  - "@TuCreadorFavorito"
+
+  # Medios por RSS (gratis). Google News filtra ya por "GTA 6".
+  medios_rss:
+    - nombre: "Google News · Latam"
+      url: "https://news.google.com/rss/search?q=%22GTA+6%22+OR+%22GTA+VI%22+OR+%22Grand+Theft+Auto+VI%22+when:2d&hl=es-419&gl=MX&ceid=MX:es-419"
+      idioma: "es"
+    - nombre: "Google News · España"
+      url: "https://news.google.com/rss/search?q=%22GTA+6%22+OR+%22GTA+VI%22+when:2d&hl=es&gl=ES&ceid=ES:es"
+      idioma: "es"
+    - nombre: "Google News · EE. UU."
+      url: "https://news.google.com/rss/search?q=%22GTA+6%22+OR+%22GTA+VI%22+OR+%22Grand+Theft+Auto+VI%22+when:2d&hl=en-US&gl=US&ceid=US:en"
+      idioma: "en"
+    - nombre: "VGC"
+      url: "https://www.videogameschronicle.com/feed/"
+      idioma: "en"
+    - nombre: "Eurogamer"
+      url: "https://www.eurogamer.net/feed"
+      idioma: "en"
+
+  # Palabras que marcan que algo es de GTA 6 (para filtrar medios y vídeos)
+  filtro_gta6: ["gta 6", "gta vi", "gta6", "grand theft auto vi", "grand theft auto 6", "leonida", "lucia caminos", "jason duval"]
+
+  # Comentarios: se leen los de los vídeos top para sacar las preguntas de la comunidad
+  comentarios_videos_top: 5
+  comentarios_por_video: 60
+
+  # Umbrales de alertas
+  alertas:
+    viral_vistas_por_hora: 20000      # vídeo explotando
+    emergente_max_suscriptores: 50000 # creador "pequeño"
+    emergente_ratio_vistas_subs: 2.0  # vistas del vídeo / suscriptores del canal
+    emergente_min_vistas: 20000
+    tema_crecimiento: 2.0             # un tema crece x2 respecto al día anterior
+    tema_min_items: 6
+    severidad_minima_notificar: "high"  # low | medium | high | critical
+
+  # Pesos del score global (deben sumar 1)
+  pesos:
+    momentum: 0.35
+    engagement: 0.25
+    relevancia: 0.15
+    autoridad: 0.10
+    novedad: 0.10
+    riesgo: 0.05
+
+  clasificar_max_por_ejecucion: 120   # vídeos/noticias nuevos que pasa por la IA en cada ejecución
+
+# ------------------------------------------------------------
+#  IA (Claude)
+# ------------------------------------------------------------
+ia:
+  modelo_rapido: "claude-haiku-5-5"     # clasificación masiva (barato)
+  modelo_principal: "claude-sonnet-5-5" # guiones, briefing, chat
+  busquedas_web_por_episodio: 6         # verificación de datos con búsqueda web
+
+# ------------------------------------------------------------
+#  PODCAST
+# ------------------------------------------------------------
+podcast:
+  duracion_minutos: 9                 # duración objetivo del episodio largo
+  shorts_por_episodio: 3              # cortes verticales sacados del episodio
+  shorts_duracion_max: 75             # segundos
+
+  # Formatos que se van alternando para que el canal no parezca una plantilla
+  formatos:
+    - id: "noticias"
+      descripcion: "Repaso de lo más importante de las últimas 48 h, de más a menos relevante."
+    - id: "a_fondo"
+      descripcion: "Un solo tema explicado a fondo (p. ej. rendimiento y FPS, mapa, PC)."
+    - id: "verdad_o_bulo"
+      descripcion: "Los rumores que circulan, uno a uno: confirmado, probable o bulo, y por qué."
+    - id: "debate"
+      descripcion: "Los dos presentadores defienden posturas opuestas sobre un tema caliente."
+    - id: "comunidad"
+      descripcion: "Respuestas a las preguntas que más se repiten en comentarios."
+    - id: "gta5_vs_gta6"
+      descripcion: "Qué cambia respecto a GTA 5 en un aspecto concreto, con datos."
+
+  presentadores:
+    - id: "A"
+      nombre: "Leo"
+      rol: "Analista"
+      personalidad: "Tranquilo y preciso. Le encantan los datos técnicos, el rendimiento y separar hechos de rumores. Humor seco."
+      voz_edge: "es-MX-JorgeNeural"
+      voz_elevenlabs: ""              # pega aquí el voice_id si usas ElevenLabs
+      color: "#19D3DA"
+      avatar: "assets/hosts/leo.png"  # opcional; si no existe se dibuja uno
+    - id: "B"
+      nombre: "Sofi"
+      rol: "Fan de la saga"
+      personalidad: "Jugadora desde Vice City. Mucha energía, hace las preguntas que se hace la comunidad, cuenta anécdotas de GTA 5 y no se calla una opinión."
+      voz_edge: "es-MX-DaliaNeural"
+      voz_elevenlabs: ""
+      color: "#FF3D8B"
+      avatar: "assets/hosts/sofi.png"
+
+  voz:
+    proveedor: "edge"                 # edge (gratis) | elevenlabs (premium) | offline (robótica, solo pruebas)
+    velocidad: "+6%"
+    elevenlabs_modelo: "eleven_multilingual_v2"
+
+  # Cómo pronunciar ciertas palabras (solo afecta a la voz, no a los subtítulos)
+  pronunciacion:
+    "GTA VI": "GTA seis"
+    "GTA 6": "GTA seis"
+    "GTA V": "GTA cinco"
+    "GTA 5": "GTA cinco"
+    "PS5 Pro": "PlayStation 5 Pro"
+    "PS5": "PlayStation 5"
+    "PS4": "PlayStation 4"
+    "FPS": "efe pe ese"
+    "fps": "efe pe ese"
+    "Xbox Series X|S": "Xbox Series X y S"
+    "Take-Two": "Teik Tu"
+
+  musica_fondo: "assets/music/fondo.mp3"   # opcional (sin copyright). Si no existe, sin música
+  musica_volumen_db: -24
+
+  subida:
+    activar: true
+    privacidad: "private"             # private | unlisted | public (public solo tras la auditoría de Google)
+    categoria_id: "20"                # Gaming
+    contenido_sintetico: true         # etiqueta obligatoria de YouTube para voces/IA realistas
+    subir_shorts: true
+
+# ------------------------------------------------------------
+#  AVISOS (opcional): Telegram y/o Discord
+# ------------------------------------------------------------
+avisos:
+  enviar_briefing_diario: true
+  enviar_alertas: true
+  enviar_aviso_episodio: true
+  enviar_informe_operaciones: true   # informe diario del Agente de Operaciones (si es false, solo avisa si hay problemas)

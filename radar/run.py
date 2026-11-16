@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import traceback
 
-from . import classify, dashboard, llm, news, oportunidades, scoring, trends, youtube
+from . import classify, dashboard, diario, llm, news, oportunidades, scoring, trends, youtube
 from .briefing import community_questions, daily_briefing
 from .config import cfg, env
 from .db import connect, iso, jdump, prune
@@ -78,6 +78,7 @@ def main():
         step("ideas para hoy", oportunidades.generar_ideas, stats, con)
 
     step("limpieza", prune, stats, con)
+    step("resumen diario", diario.actualizar, stats, con)
     step("panel", lambda: str(dashboard.build(con)), stats)
     con.execute("UPDATE runs SET finished_at=?, stats=?, error=? WHERE id=?",
                 (iso(), jdump(stats), "; ".join(stats.get("errores", [])) or None, run_id))

@@ -10,6 +10,14 @@ canal:
   subtitulo: "El podcast de GTA 6"
   idioma: "es-419"                    # español latinoamericano
   zona_horaria: "America/Mexico_City" # para fechas dentro del vídeo
+  lanzamiento: "2026-11-19"           # fecha de lanzamiento de GTA VI (cuenta atrás del panel)
+
+# ------------------------------------------------------------
+#  PANEL (centro de control)
+# ------------------------------------------------------------
+panel:
+  zona_horaria: "Europe/Madrid"       # en qué zona se cuentan los «días» de las gráficas
+  datos_antiguos_horas: 3             # a partir de cuántas horas sin actualizar se avisa «datos antiguos»
 
 # ------------------------------------------------------------
 #  RADAR — qué vigila y cómo puntúa

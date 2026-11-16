@@ -136,6 +136,7 @@ def exportar(con, tid: str) -> dict:
             if not ok:
                 raise ExportacionFallida(f"Se copió pero la comprobación falló: {motivo}. Vuelve a exportar.")
             resultado[pl] = {"ruta": str(sub / f"{nombre}.mp4"), "estado": "exportado (hash comprobado)"}
+            db.evento(con, tid, "exportado", v["n"], pl)
             _revisar(dia, nombre, g, p, v, pl)
     except ExportacionFallida:
         raise
@@ -183,3 +184,4 @@ def marcar_subido(con, tid: str, plataforma: str, url: str) -> None:
     ahora = datetime.now(timezone.utc).isoformat(timespec="seconds")
     db.guardar_exportacion(con, v["id"], plataforma, ruta=str(subidos / ruta.name), manifiesto_ruta=str(man),
                            subida_en=ahora, url=url)
+    db.evento(con, tid, "publicado", v["n"], plataforma)

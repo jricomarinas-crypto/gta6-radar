@@ -53,6 +53,7 @@ def render_version(con, vid: str) -> dict:
     db.actualizar_version(con, vid, estado_produccion="listo", etapa="Listo para revisar", video_ruta=str(destino),
                           srt_ruta=str(srt), portada_ruta=str(work / "portada.jpg"), duracion=q[t["plataformas"][0]]["duracion"],
                           calidad=q)
+    db.evento(con, t["id"], "video_fabricado", v["n"])
     return db.version(con, vid)
 
 

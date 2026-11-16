@@ -17,7 +17,10 @@ from radar.db import iso, jdump, jload
 
 from . import rutas
 
-VERSION_ESQUEMA = 2
+VERSION_ESQUEMA = 3
+# Eventos de producción (solo se añaden, nunca se pisan). Tipos:
+#   pieza_creada · idea_aprobado · guion_aprobado · video_fabricado · video_aprobado · exportado · publicado
+# origen = 'registro' (ocurrió con el Estudio funcionando) | 'reconstruido' (deducido de fechas guardadas antes de v3)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
@@ -47,6 +50,12 @@ CREATE TABLE IF NOT EXISTS aprobaciones (
     PRIMARY KEY (trabajo_id, tipo)
 );
 CREATE TABLE IF NOT EXISTS cambios (trabajo_id TEXT, version_n INTEGER, nota TEXT, creada_en TEXT);
+CREATE TABLE IF NOT EXISTS eventos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    trabajo_id TEXT NOT NULL, tipo TEXT NOT NULL, version_n INTEGER, plataforma TEXT,
+    fecha TEXT NOT NULL, origen TEXT NOT NULL DEFAULT 'registro'
+);
+CREATE INDEX IF NOT EXISTS idx_eventos_fecha ON eventos(fecha);
 CREATE TABLE IF NOT EXISTS exportaciones (
     version_id TEXT NOT NULL, plataforma TEXT NOT NULL,
     ruta TEXT, manifiesto_ruta TEXT, nombre TEXT, exportada_en TEXT, verificada_en TEXT,
@@ -94,7 +103,33 @@ def _migrar(con) -> None:
             for p in con.execute("SELECT * FROM piezas WHERE trabajo_id=?", (t["id"],)):
                 con.execute("""INSERT OR IGNORE INTO exportaciones(version_id,plataforma,ruta,exportada_en,subida_en)
                                VALUES(?,?,?,?,?)""", (vid, p["plataforma"], p["ruta"], t["terminado_en"], p["subida_en"]))
-        con.execute("INSERT OR REPLACE INTO meta(k,v) VALUES('version_esquema',?)", (str(VERSION_ESQUEMA),))
+        con.execute("INSERT OR REPLACE INTO meta(k,v) VALUES('version_esquema','2')")
+        actual = 2
+    if actual < 3:
+        # v2 → v3: eventos de producción, reconstruidos de las fechas que ya había (origen='reconstruido')
+        rec = []
+        for t in con.execute("SELECT id, creado_en FROM trabajos"):
+            rec.append((t["id"], "pieza_creada", None, None, t["creado_en"]))
+        for v in con.execute("SELECT trabajo_id, n, actualizada_en, creada_en, legado FROM versiones WHERE estado_produccion='listo'"):
+            rec.append((v["trabajo_id"], "video_fabricado", v["n"], None, v["creada_en"] if v["legado"] else v["actualizada_en"]))
+        for a in con.execute("SELECT trabajo_id, tipo, version_n, creada_en FROM aprobaciones"):
+            rec.append((a["trabajo_id"], f"{a['tipo']}_aprobado", a["version_n"], None, a["creada_en"]))
+        for e in con.execute("""SELECT v.trabajo_id, v.n, e.plataforma, e.exportada_en, e.subida_en
+                                FROM exportaciones e JOIN versiones v ON v.id=e.version_id"""):
+            if e["exportada_en"]:
+                rec.append((e["trabajo_id"], "exportado", e["n"], e["plataforma"], e["exportada_en"]))
+            if e["subida_en"]:
+                rec.append((e["trabajo_id"], "publicado", e["n"], e["plataforma"], e["subida_en"]))
+        con.executemany("""INSERT INTO eventos(trabajo_id,tipo,version_n,plataforma,fecha,origen)
+                           VALUES(?,?,?,?,?,'reconstruido')""", [r for r in rec if r[4]])
+        con.execute("INSERT OR REPLACE INTO meta(k,v) VALUES('eventos_desde',?)", (iso(),))
+        con.execute("INSERT OR REPLACE INTO meta(k,v) VALUES('version_esquema','3')")
+    con.commit()
+
+
+def evento(con, tid: str, tipo: str, version_n: int | None = None, plataforma: str | None = None) -> None:
+    con.execute("INSERT INTO eventos(trabajo_id,tipo,version_n,plataforma,fecha,origen) VALUES(?,?,?,?,?,'registro')",
+                (tid, tipo, version_n, plataforma, iso()))
     con.commit()
 
 
@@ -106,6 +141,7 @@ def crear_trabajo(con, idea: dict, variante: str, formato: str, plataformas: lis
                    VALUES(?,?,?,?,?,?,'en_estudio','Brief',?,'en_estudio','no_publicado')""",
                 (tid, idea["id"], jdump(idea), formato, variante, jdump(plataformas), iso()))
     con.commit()
+    evento(con, tid, "pieza_creada")
     return trabajo(con, tid)
 
 
@@ -175,6 +211,7 @@ def aprobar(con, tid: str, tipo: str, version_n: int | None, guion_hash: str | N
     con.execute("INSERT OR REPLACE INTO aprobaciones(trabajo_id,tipo,version_n,guion_hash,creada_en) VALUES(?,?,?,?,?)",
                 (tid, tipo, version_n, guion_hash, iso()))
     con.commit()
+    evento(con, tid, f"{tipo}_aprobado", version_n)
 
 
 def aprobaciones(con, tid: str) -> dict[str, dict]:

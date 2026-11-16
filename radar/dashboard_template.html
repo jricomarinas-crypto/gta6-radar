@@ -117,6 +117,23 @@
   .xbadge{color:#86EFAC;font-weight:700;font-variant-numeric:tabular-nums}
   .tblwrap{overflow-x:auto}
   @media (max-width:640px){.gap{grid-template-columns:minmax(0,1fr) 52px}.gap .track{display:none}}
+  /* fábrica (solo en el Estudio local) */
+  .btn{background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+  .btn:hover{border-color:var(--faint)}
+  .btn.pri{background:var(--accent);border-color:var(--accent);color:#111}
+  .btn.pri:hover{background:#FB923C}
+  .btn:disabled{opacity:.5;cursor:default}
+  .fab-ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+  .fab-idea{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
+  .fab-idea .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .fab-idea label.chk{display:flex;gap:5px;align-items:center;font-size:12.5px;color:var(--muted);cursor:pointer}
+  .fab-idea select{padding:5px 8px;font-size:12.5px}
+  .job{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:10px 0;border-top:1px solid var(--border);align-items:center}
+  .job:first-child{border-top:0}
+  .job .track{grid-column:1/-1;height:6px}
+  .ask{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border:1px solid rgba(249,115,22,.4);border-radius:8px;padding:8px 10px;font-size:13px;grid-column:1/-1}
+  .ask code{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:5px}
+  .qc-ok{color:#86EFAC} .qc-bad{color:#FCA5A5}
   #tip{position:fixed;pointer-events:none;background:#1C1C20;border:1px solid var(--border2);border-radius:8px;padding:7px 10px;font-size:12px;display:none;z-index:9;box-shadow:0 6px 24px rgba(0,0,0,.5)}
   #tip b{display:block;font-size:14px}
   #tip span{color:var(--muted)}
@@ -162,6 +179,7 @@
     <main>
       <div class="card">
         <div class="tabs" role="tablist">
+          <button role="tab" aria-selected="false" data-tab="fabrica" hidden>Fábrica</button>
           <button role="tab" aria-selected="true" data-tab="radar">Radar de contenido</button>
           <button role="tab" aria-selected="false" data-tab="oportunidades">Oportunidades</button>
           <button role="tab" aria-selected="false" data-tab="creators">Creadores</button>
@@ -179,6 +197,13 @@
             </select></label>
           </div>
           <div id="videos"></div>
+        </div>
+        <div data-panel="fabrica" hidden>
+          <div class="toolbar"><span id="fab-info"></span><span style="flex:1"></span>
+            <button class="btn" id="fab-carpeta">Abrir carpeta</button>
+            <button class="btn pri" id="fab-pack">Crear el pack del día</button></div>
+          <div class="op"><h3>Mejores ideas ahora</h3><div id="fab-ideas" class="fab-ideas"></div>
+            <h3>Encargos</h3><div id="fab-trabajos"></div></div>
         </div>
         <div data-panel="oportunidades" hidden><div id="oportunidades" class="op"></div></div>
         <div data-panel="creators" hidden><div id="creators"></div></div>
@@ -532,7 +557,84 @@ $('#csv').addEventListener('click', () => {
     download: `gta6-radar-${new Date().toISOString().slice(0, 10)}.csv`});
   document.body.append(a); a.click(); a.remove();
 });
-renderStatic(); renderOportunidades(); render();
+// ---------- fábrica (solo aparece si el panel lo sirve el Estudio: python -m estudio)
+const FAB = {formatos: {}, plataformas: {}, timer: null};
+async function api(path, body) {
+  const r = await fetch(path, body ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)} : {});
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Error ${r.status}`);
+  return data;
+}
+function showTab(name) {
+  document.querySelectorAll('[role=tab]').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === name));
+  document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== name);
+}
+async function fabIdeas() {
+  const d = await api('/api/ideas');
+  FAB.formatos = d.formatos; FAB.plataformas = d.plataformas;
+  $('#fab-info').textContent = `${d.ideas.length} ideas · los vídeos se guardan en ${d.carpeta}`;
+  $('#fab-ideas').replaceChildren(...(d.ideas.length ? d.ideas.map(i => {
+    const fmtSel = el('select', {'aria-label': 'Formato'}, ...Object.entries(FAB.formatos).map(([k, v]) => el('option', {value: k, text: v})));
+    fmtSel.value = i.formato;
+    const checks = Object.entries(FAB.plataformas).map(([k, v]) => { const c = el('input', {type: 'checkbox', value: k});
+      c.checked = i.plataformas.includes(k); return [c, el('label', {class: 'chk'}, c, v)]; });
+    const crear = el('button', {class: 'btn pri', text: 'Crear'});
+    crear.addEventListener('click', async () => {
+      crear.disabled = true;
+      try { await api('/api/crear', {idea_id: i.id, formato: fmtSel.value, plataformas: checks.filter(([c]) => c.checked).map(([c]) => c.value)});
+        crear.textContent = 'Encargado ✓'; fabTrabajos(); }
+      catch (e) { alert(e.message); crear.disabled = false; } });
+    const desc = el('button', {class: 'btn', text: 'Descartar'});
+    desc.addEventListener('click', async () => { await api('/api/descartar', {idea_id: i.id}); fabIdeas(); });
+    const link = (i.fuentes || [])[0];
+    return el('div', {class: 'fab-idea'},
+      el('div', {class: 'badges'}, el('span', {class: 'b s-info', text: i.origen}), el('span', {class: 'b', text: `score ${i.score}`})),
+      el('div', {class: 'vt', text: i.titulo}), el('div', {class: 'am', text: i.por_que}),
+      link && safeUrl(link.url) ? el('a', {class: 'am', href: safeUrl(link.url), target: '_blank', rel: 'noopener', text: 'Ver de dónde sale ↗'}) : null,
+      el('div', {class: 'row'}, fmtSel, ...checks.map(([, l]) => l)),
+      el('div', {class: 'row'}, crear, desc));
+  }) : [el('div', {class: 'empty', text: 'No hay ideas ahora mismo. Descarga los datos del Radar o espera a la próxima ejecución.'})]));
+}
+const ESTADO = {esperando_guion: ['s-warn', 'Esperando guion'], fabricando: ['s-info', 'Fabricando'], listo: ['s-good', 'Listo'], error: ['s-crit', 'Error']};
+async function fabTrabajos() {
+  const {trabajos} = await api('/api/trabajos');
+  $('#fab-trabajos').replaceChildren(...(trabajos.length ? trabajos.map(t => {
+    const [cls, txt] = ESTADO[t.estado] || ['', t.estado];
+    const kids = [
+      el('div', {}, el('div', {class: 'vt', text: t.idea.titulo || t.idea_id}),
+        el('div', {class: 'meta'}, el('span', {class: 'b ' + cls, text: txt}), el('span', {text: FAB.formatos[t.formato] || t.formato}),
+          el('span', {text: t.plataformas.map(p => FAB.plataformas[p] || p).join(' + ')}), el('span', {text: `encargo ${t.id}`}),
+          t.paso ? el('span', {text: t.paso}) : null)),
+      t.estado === 'listo' ? (() => { const b = el('button', {class: 'btn', text: 'Abrir carpeta'});
+        b.addEventListener('click', () => api('/api/abrir-carpeta', {trabajo_id: t.id})); return b; })() : el('span'),
+      el('div', {class: 'track'}, el('div', {class: 'fill', style: `width:${Math.round((t.progreso || 0) * 100)}%`}))];
+    if (t.estado === 'esperando_guion') {
+      const frase = `Escribe el guion del encargo ${t.id}`;
+      const copiar = el('button', {class: 'btn', text: 'Copiar'});
+      copiar.addEventListener('click', async () => { try { await navigator.clipboard.writeText(frase); copiar.textContent = 'Copiado ✓'; } catch { copiar.textContent = 'Cópialo a mano'; } });
+      kids.push(el('div', {class: 'ask'}, 'Pídeselo a Claude en el chat:', el('code', {text: frase}), copiar));
+    }
+    if (t.error) kids.push(el('div', {class: 'am qc-bad', style: 'grid-column:1/-1', text: t.error}));
+    (t.piezas || []).forEach(p => { const q = p.calidad || {}; const fallos = (q.fallos || []);
+      kids.push(el('div', {class: 'am', style: 'grid-column:1/-1'}, `${FAB.plataformas[p.plataforma] || p.plataforma}: ${Math.round(p.duracion || 0)} s · `,
+        el('span', {class: fallos.length ? 'qc-bad' : 'qc-ok', text: fallos.length ? '✗ ' + fallos.join(' · ') : '✓ control de calidad'}),
+        p.subida_en ? ' · subido' : (() => { const b = el('button', {class: 'btn', style: 'margin-left:8px;padding:3px 8px', text: 'Marcar subido'});
+          b.addEventListener('click', async () => { await api('/api/subido', {pieza_id: p.id}); fabTrabajos(); }); return b; })())); });
+    return el('div', {class: 'job'}, ...kids);
+  }) : [el('div', {class: 'empty', text: 'Aún no hay encargos. Pulsa Crear en una idea.'})]));
+}
+async function initFabrica() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  try { await fabIdeas(); } catch { return; }  // sin Estudio (GitHub Pages o archivo): la pestaña no aparece
+  const tab = document.querySelector('[data-tab=fabrica]'); tab.hidden = false; showTab('fabrica');
+  $('#fab-pack').addEventListener('click', async e => { e.target.disabled = true;
+    try { await api('/api/crear-pack', {}); await fabTrabajos(); } catch (err) { alert(err.message); } e.target.disabled = false; });
+  $('#fab-carpeta').addEventListener('click', () => api('/api/abrir-carpeta', {}));
+  await fabTrabajos();
+  FAB.timer = setInterval(() => fabTrabajos().catch(() => {}), 3000);
+}
+
+renderStatic(); renderOportunidades(); render(); initFabrica();
 </script>
 </body>
 </html>

@@ -33,7 +33,17 @@ python tools/datos_demo.py                         # panel demo → site/index.h
 python -m podcast.run --demo --sin-subir           # episodio demo → output/<fecha>/ (necesita ffmpeg)
 python tools/descargar_datos.py && python -m radar.chat   # preguntar al Radar con datos reales
 gh run list --limit 10                             # estado de GitHub Actions
+python -m estudio                                  # Estudio en http://localhost:8080 (pestaña Fábrica)
+python -m fabrica.encargo [id]                     # encargos que esperan guion / plantilla del guion
+python -m fabrica.producir <id> output/guiones/<id>.json   # fabrica el vídeo → ~/Movies/Punto de Control/<fecha>/
 ```
+
+## Fábrica (plan v2, `docs/plan-v2.md`) — modo gratis
+Sin API de Claude: cuando Javier diga «Escribe el guion del encargo X»:
+1. `python -m fabrica.encargo X` para ver la idea, el formato y la plantilla.
+2. Verifica cada dato con búsqueda web en fuentes primarias o medios fiables (nunca otros creadores).
+3. Escribe el JSON en `output/guiones/X.json` (formatos: `lista_pais`, `verdad_bulo`, `ultima_hora`; ver `fabrica/guion.py`).
+4. `python -m fabrica.producir X output/guiones/X.json` (necesita ffmpeg con libass: `/opt/homebrew/opt/ffmpeg-full/bin` en el PATH).
 
 ## Reglas que no se rompen
 - **Secretos**: nunca en el código, en commits ni en el chat. Van en GitHub Secrets (`gh secret set NOMBRE`, que pide el valor en la terminal) o en `.env` (ignorado por git).

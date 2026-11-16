@@ -1,0 +1,79 @@
+{
+  "formato": "lista_pais",
+  "titulo": "Demo: a qué hora se juega en cada país",
+  "gancho": "¿A qué hora juegas tú?",
+  "etiqueta": "CONFIRMADO",
+  "fuente": "Ejemplo (demo)",
+  "fuentes": [
+    {
+      "titulo": "Ejemplo de fuente (demo)",
+      "url": "https://www.rockstargames.com/newswire"
+    }
+  ],
+  "lista": [
+    {
+      "nombre": "Nueva Zelanda",
+      "valor": "Hora demo 1"
+    },
+    {
+      "nombre": "España",
+      "valor": "Hora demo 2"
+    },
+    {
+      "nombre": "Argentina",
+      "valor": "Hora demo 3"
+    },
+    {
+      "nombre": "Colombia",
+      "valor": "Hora demo 4"
+    },
+    {
+      "nombre": "México",
+      "valor": "Hora demo 5"
+    }
+  ],
+  "lineas": [
+    {
+      "habla": "B",
+      "texto": "¿Eres de México? Vas a jugar de los últimos."
+    },
+    {
+      "habla": "A",
+      "texto": "Te digo la hora exacta en cada país."
+    },
+    {
+      "habla": "A",
+      "texto": "Los primeros en jugar están en Nueva Zelanda.",
+      "item": 0
+    },
+    {
+      "habla": "B",
+      "texto": "En España llega varias horas después.",
+      "item": 1
+    },
+    {
+      "habla": "A",
+      "texto": "Argentina y Colombia van un poco más tarde.",
+      "item": 2
+    },
+    {
+      "habla": "B",
+      "texto": "Y México cierra la lista. Duele, lo sé.",
+      "item": 4
+    },
+    {
+      "habla": "A",
+      "texto": "Esto es un vídeo de demostración, no datos reales."
+    },
+    {
+      "habla": "B",
+      "texto": "¿Desde qué país lo vas a jugar? Te leo."
+    }
+  ],
+  "textos": {
+    "tiktok": "La hora a la que juegas GTA 6 en tu país (demo)",
+    "youtube_titulo": "GTA 6: a qué hora se juega en cada país (demo)",
+    "youtube_descripcion": "Vídeo de demostración de la Fábrica.",
+    "comentario_fijado": "¿Desde qué país lo juegas?"
+  }
+}

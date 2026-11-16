@@ -94,6 +94,17 @@ A partir de ahí funciona solo: Radar cada hora y episodio cada día a las 14:41
   python -m radar.chat "¿qué vídeos de GTA 6 crecen más rápido ahora?"
   ```
 
+## Estudio y Fábrica (en tu Mac, gratis)
+```bash
+python -m estudio        # abre http://localhost:8080 → pestaña Fábrica
+```
+1. En **Fábrica** ves las mejores ideas del momento (kits del lanzamiento, temas con hueco, alertas).
+2. Elige formato (Lista por país, Verdad o bulo, Última hora) y plataformas, y pulsa **Crear**.
+3. Copia la frase «Escribe el guion del encargo X» y pégala en Claude Code: Claude verifica los datos, escribe el guion y fabrica el vídeo.
+4. Los vídeos aparecen en `~/Movies/Punto de Control/<fecha>/TikTok/` y `YouTube Shorts/`, con un `.txt` de textos listos y `_revisar.md`.
+
+El plan completo y los hitos siguientes están en `docs/plan-v2.md`.
+
 ## Agentes que gestionan el canal (automáticos)
 | Agente | Cuándo | Qué hace |
 |---|---|---|

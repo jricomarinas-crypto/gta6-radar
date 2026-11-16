@@ -1,0 +1,52 @@
+{
+  "formato": "ultima_hora",
+  "titulo": "Demo: última hora de GTA 6",
+  "gancho": "Acaba de pasar",
+  "etiqueta": "REPORTADO",
+  "fuente": "Ejemplo (demo)",
+  "hora": "DEMO",
+  "fuentes": [
+    {
+      "titulo": "Ejemplo de fuente (demo)",
+      "url": "https://www.rockstargames.com/newswire"
+    }
+  ],
+  "titular": "Titular de ejemplo",
+  "detalle": "Detalle de ejemplo para probar el formato",
+  "lineas": [
+    {
+      "habla": "A",
+      "texto": "Acaba de pasar algo con GTA 6."
+    },
+    {
+      "habla": "B",
+      "texto": "¿Qué pasó? Cuéntalo ya."
+    },
+    {
+      "habla": "A",
+      "texto": "Un medio fiable lo acaba de publicar."
+    },
+    {
+      "habla": "A",
+      "texto": "Te dejo el dato y la fuente en pantalla."
+    },
+    {
+      "habla": "B",
+      "texto": "Pero ojo, que todavía no es oficial."
+    },
+    {
+      "habla": "A",
+      "texto": "Exacto. Es reportado, no confirmado."
+    },
+    {
+      "habla": "B",
+      "texto": "Esto es una demo. ¿Qué opinas tú?"
+    }
+  ],
+  "textos": {
+    "tiktok": "Última hora de GTA 6 (demo)",
+    "youtube_titulo": "GTA 6: última hora (demo)",
+    "youtube_descripcion": "Vídeo de demostración.",
+    "comentario_fijado": "¿Qué opinas?"
+  }
+}

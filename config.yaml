@@ -205,6 +205,63 @@ podcast:
     subir_shorts: true
 
 # ------------------------------------------------------------
+#  FÁBRICA Y ESTUDIO (plan v2 · hitos H1 y H2)
+#  python -m estudio  → http://localhost:8080 (pestaña Fábrica)
+# ------------------------------------------------------------
+fabrica:
+  carpeta_base: "~/Movies/Punto de Control"   # o una carpeta de iCloud Drive para verlos en el iPhone
+  pack_del_dia: 5
+  plataformas_por_defecto: ["tiktok", "shorts"]
+  duraciones:                                 # segundos [mínimo, máximo] para el control de calidad
+    tiktok: [25, 45]
+    tiktok_larga: [61, 75]
+    shorts: [25, 60]
+  volumen_lufs: -14
+  # Kits del calendario: ideas que aparecen arriba en la Fábrica mientras dura su ventana (hora de España).
+  # Los datos (horas, precios) NO van aquí: se verifican en la web al escribir cada guion.
+  kits:
+    - id: "kit-hora-por-pais"
+      titulo: "A qué hora se juega GTA 6 en cada país"
+      formato: "lista_pais"
+      por_que: "Cuenta atrás: la duda más buscada antes del desbloqueo"
+      desde: "2026-11-16 00:00"
+      hasta: "2026-11-19 08:00"
+    - id: "kit-primeros-paises"
+      titulo: "Ya juegan en Nueva Zelanda: lo que cuentan sin spoilers"
+      formato: "ultima_hora"
+      por_que: "Primeros países jugando mientras Latinoamérica espera"
+      desde: "2026-11-18 12:00"
+      hasta: "2026-11-19 08:00"
+    - id: "kit-bulos-lanzamiento"
+      titulo: "Verdad o bulo: los rumores del día del lanzamiento"
+      formato: "verdad_bulo"
+      por_que: "En las horas previas circulan más bulos que nunca"
+      desde: "2026-11-17 00:00"
+      hasta: "2026-11-20 00:00"
+    - id: "kit-desbloqueo-espana"
+      titulo: "GTA 6 ya está disponible en España: primeras impresiones"
+      formato: "ultima_hora"
+      por_que: "Desbloqueo en España a las 0:00 del 19"
+      desde: "2026-11-18 23:30"
+      hasta: "2026-11-19 12:00"
+    - id: "kit-ya-en-mexico"
+      titulo: "Ya puedes jugar en México: qué hacer en la primera hora"
+      formato: "lista_pais"
+      por_que: "Desbloqueo en Ciudad de México hacia las 7:00 del 19 (hora de España)"
+      desde: "2026-11-19 06:30"
+      hasta: "2026-11-20 06:00"
+    - id: "kit-primer-finde"
+      titulo: "Las dudas más buscadas del primer fin de semana"
+      formato: "verdad_bulo"
+      por_que: "Primer fin de semana: picos de búsquedas de dudas y trucos"
+      desde: "2026-11-20 12:00"
+      hasta: "2026-11-23 23:59"
+
+estudio:
+  puerto: 8080
+  abrir_finder_al_terminar: true
+
+# ------------------------------------------------------------
 #  AVISOS (opcional): Telegram y/o Discord
 # ------------------------------------------------------------
 avisos:

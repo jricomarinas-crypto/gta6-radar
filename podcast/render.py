@@ -370,7 +370,7 @@ def _concat_file(items: list[tuple[Path, float]], path: Path) -> Path:
 
 
 def ffmpeg_compose(items, audio: Path, ass: Path, out: Path, W: int, H: int, wave_box: tuple, duration: float,
-                   bar_color: str = PINK, audio_ss: float = 0.0, fade: bool = False):
+                   bar_color: str = PINK, audio_ss: float = 0.0, fade: bool = False, lufs: float = -15):
     work = out.parent
     lst = _concat_file(items, work / (out.stem + "_frames.txt"))
     music = ROOT / (cfg()["podcast"].get("musica_fondo") or "_none_")
@@ -394,9 +394,9 @@ def ffmpeg_compose(items, audio: Path, ass: Path, out: Path, W: int, H: int, wav
         db = cfg()["podcast"].get("musica_volumen_db", -24)
         fc += [f"[3:a]aresample=48000,volume={db}dB[mus]",
                "[mus][sc]sidechaincompress=threshold=0.02:ratio=6:attack=30:release=500[duck]",
-               "[voice][duck]amix=inputs=2:duration=first:normalize=0,loudnorm=I=-15:TP=-1.5:LRA=11[a]"]
+               f"[voice][duck]amix=inputs=2:duration=first:normalize=0,loudnorm=I={lufs}:TP=-1.5:LRA=11[a]"]
     else:
-        fc += ["[sc]anullsink", "[voice]loudnorm=I=-15:TP=-1.5:LRA=11[a]"]
+        fc += ["[sc]anullsink", f"[voice]loudnorm=I={lufs}:TP=-1.5:LRA=11[a]"]
     cmd += ["-filter_complex", ";".join(fc), "-map", "[v]", "-map", "[a]", "-t", f"{duration:.3f}",
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-r", "30",
             "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", str(out)]

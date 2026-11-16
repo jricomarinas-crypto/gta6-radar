@@ -1,0 +1,56 @@
+{
+  "formato": "verdad_bulo",
+  "titulo": "Demo: verdad o bulo del lanzamiento",
+  "gancho": "Todo el mundo lo dice",
+  "etiqueta": "RUMOR",
+  "fuente": "Ejemplo (demo)",
+  "fuentes": [
+    {
+      "titulo": "Ejemplo de fuente (demo)",
+      "url": "https://www.rockstargames.com/newswire"
+    }
+  ],
+  "afirmacion": "Afirmación de ejemplo que circula por redes",
+  "veredicto": "BULO",
+  "lineas": [
+    {
+      "habla": "B",
+      "texto": "Todo el mundo lo está compartiendo."
+    },
+    {
+      "habla": "A",
+      "texto": "Hoy te digo si es verdad o un bulo."
+    },
+    {
+      "habla": "B",
+      "texto": "Lo vi en tres vídeos esta mañana."
+    },
+    {
+      "habla": "A",
+      "texto": "Fui a la fuente original. Y ojo."
+    },
+    {
+      "habla": "A",
+      "texto": "Es un rumor sin ninguna prueba. Es bulo.",
+      "revela": true
+    },
+    {
+      "habla": "B",
+      "texto": "Entonces no lo compartan más."
+    },
+    {
+      "habla": "A",
+      "texto": "Recuerda: esto es solo una demostración."
+    },
+    {
+      "habla": "B",
+      "texto": "¿Qué bulo has visto tú? Cuéntamelo."
+    }
+  ],
+  "textos": {
+    "tiktok": "¿Verdad o bulo? (demo)",
+    "youtube_titulo": "GTA 6: ¿verdad o bulo? (demo)",
+    "youtube_descripcion": "Vídeo de demostración.",
+    "comentario_fijado": "¿Qué bulo has visto tú?"
+  }
+}

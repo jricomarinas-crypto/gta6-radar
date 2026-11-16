@@ -6,3 +6,4 @@ output/
 site/
 tools/client_secret.json
 .venv/
+data/estudio_site/

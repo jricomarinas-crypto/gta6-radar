@@ -10,6 +10,18 @@ on:
         description: "¿Subir a YouTube (privado)?"
         type: boolean
         default: true
+      tema:
+        description: "Tema (opcional), p. ej.: las armas confirmadas de GTA 6"
+        type: string
+        default: ""
+      video:
+        description: "URL de un vídeo de YouTube (opcional): solo se usa su título como pista"
+        type: string
+        default: ""
+      cantidad:
+        description: "Cuántos Shorts (1-5)"
+        type: string
+        default: "3"
 
 permissions:
   contents: write
@@ -49,12 +61,18 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TEMA: ${{ inputs.tema }}
+          VIDEO: ${{ inputs.video }}
+          CANTIDAD: ${{ inputs.cantidad }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.subir }}" = "false" ]; then
-            python -m podcast.shorts_diarios --sin-subir
-          else
-            python -m podcast.shorts_diarios
+          args=()
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.subir }}" = "false" ] && args+=(--sin-subir)
+            [ -n "$TEMA" ] && args+=(--tema "$TEMA")
+            [ -n "$VIDEO" ] && args+=(--video "$VIDEO")
+            [ -n "$CANTIDAD" ] && args+=(--n "$CANTIDAD")
           fi
+          python -m podcast.shorts_diarios "${args[@]}"
 
       - name: Guardar datos
         if: always()

@@ -3,6 +3,8 @@
     python -m podcast.shorts_diarios                # investiga, escribe, pone voces, monta y sube (privado)
     python -m podcast.shorts_diarios --sin-subir    # todo menos la subida
     python -m podcast.shorts_diarios --demo         # usa examples/short_demo.json (no necesita Claude)
+    python -m podcast.shorts_diarios --tema "las armas de GTA 6" --n 3     # serie sobre un tema que eliges tú
+    python -m podcast.shorts_diarios --video "https://youtu.be/..."        # tema sacado del título de un vídeo
 
 Contenido 100 % propio: nada de clips de otros creadores ni de Rockstar.
 """
@@ -13,6 +15,8 @@ import json
 import shutil
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+import requests
 
 from radar.config import OUTPUT_DIR, ROOT, cfg
 from radar.db import connect, jdump, jload, kv_get, kv_set
@@ -39,10 +43,26 @@ def validar(shorts: list[dict]) -> list[dict]:
     return ok
 
 
-def escribir(con, n: int) -> tuple[list[dict], list[dict]]:
-    """Claude elige los temas, verifica con búsqueda web y escribe los Shorts."""
+def tema_de_video(url: str) -> str:
+    """Título y canal de un vídeo de YouTube (oEmbed público, sin clave ni cuota). Solo se usa como pista del tema."""
+    r = requests.get("https://www.youtube.com/oembed", params={"url": url, "format": "json"}, timeout=15)
+    r.raise_for_status()
+    d = r.json()
+    return f"«{d.get('title', '')}» (vídeo de {d.get('author_name', 'otro creador')})"
+
+
+def escribir(con, n: int, tema: str | None = None) -> tuple[list[dict], list[dict]]:
+    """Claude elige los temas (o usa el que le das), verifica con búsqueda web y escribe los Shorts."""
     p = cfg()["podcast"]
     a, b = ({h["id"]: h for h in p["presentadores"]}[k] for k in ("A", "B"))
+    if tema:
+        encargo = (f"TEMA ELEGIDO POR EL DUEÑO DEL CANAL: {tema}\n"
+                   f"   Haz una SERIE de {n} Shorts sobre ese tema, cada uno con un ángulo distinto (p. ej. parte 1, 2, 3…),\n"
+                   "   que se entiendan solos. Si el tema viene de un vídeo de otro creador, úsalo SOLO como pista de qué\n"
+                   "   interesa: no copies su guion, su estructura ni su título, y no lo uses como fuente de datos.")
+    else:
+        encargo = (f"Elige los {n} temas con más tirón AHORA (momentum, alertas, temas en alza con poca cobertura en\n"
+                   "   español) y que se puedan contar bien en 40 segundos.")
     hechos = jload(kv_get(con, "shorts_hechos"), [])[-15:]
     hoy = [{"titulo": r["title"], "temas": jload(r["topic_keys"])}
            for r in con.execute("SELECT * FROM episodes ORDER BY date DESC LIMIT 2")]
@@ -61,8 +81,7 @@ YA CUBIERTO (no repitas el mismo ángulo):
 - Shorts recientes: {jdump(hechos)}
 
 Tu trabajo:
-1. Elige los {n} temas con más tirón AHORA (momentum, alertas, temas en alza con poca cobertura en español)
-   y que se puedan contar bien en 40 segundos.
+1. {encargo}
 2. Verifica cada dato clave con búsqueda web en fuentes primarias o medios fiables. Nunca uses a otros creadores como fuente.
 3. Escribe cada Short:
    - Primera línea = GANCHO que se entiende sin contexto en menos de 2 segundos (pregunta o dato fuerte).
@@ -89,13 +108,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--demo", action="store_true")
     ap.add_argument("--sin-subir", action="store_true")
+    ap.add_argument("--tema", help='tema elegido por ti, p. ej. "las armas confirmadas de GTA 6"')
+    ap.add_argument("--video", help="URL de un vídeo de YouTube: se usa solo su título como pista del tema")
+    ap.add_argument("--n", type=int, help="cuántos Shorts (por defecto: config.yaml)")
     args = ap.parse_args()
 
     conf = cfg()["podcast"].get("shorts_diarios", {})
-    if not conf.get("activar", True) and not args.demo:
+    tema = args.tema
+    if args.video:
+        pista = tema_de_video(args.video)
+        tema = f"{tema} — inspirado en {pista}" if tema else pista
+    if not conf.get("activar", True) and not args.demo and not tema:
         print("Shorts diarios desactivados en config.yaml (podcast.shorts_diarios.activar)")
         return
-    n = int(conf.get("por_ejecucion", 2))
+    n = max(1, min(5, args.n or int(conf.get("por_ejecucion", 2))))
     con = connect()
     now = datetime.now(ZoneInfo(cfg()["canal"].get("zona_horaria", "UTC")))
     work = OUTPUT_DIR / now.strftime("%Y-%m-%d") / f"shorts_{now.strftime('%H%M')}"
@@ -107,8 +133,8 @@ def main():
     if args.demo:
         shorts = validar(json.loads((ROOT / "examples/short_demo.json").read_text(encoding="utf-8"))["shorts"])
     else:
-        print("▶ Eligiendo temas y verificando datos…")
-        shorts, _ = escribir(con, n)
+        print(f"▶ {'Tema: ' + tema if tema else 'Eligiendo temas'} · verificando datos…")
+        shorts, _ = escribir(con, n, tema)
     shorts = shorts[:n]
     if not shorts:
         raise SystemExit("La IA no devolvió ningún Short válido")

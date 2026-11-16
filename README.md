@@ -96,14 +96,19 @@ A partir de ahí funciona solo: Radar cada hora y episodio cada día a las 14:41
 
 ## Estudio y Fábrica (en tu Mac, gratis)
 ```bash
-python -m estudio        # abre http://localhost:8080 → pestaña Fábrica
+python -m estudio        # abre http://localhost:8080 → pestaña Estudio  (si está ocupado: --puerto 8090)
 ```
-1. En **Fábrica** ves las mejores ideas del momento (kits del lanzamiento, temas con hueco, alertas).
-2. Elige formato (Lista por país, Verdad o bulo, Última hora) y plataformas, y pulsa **Crear**.
-3. Copia la frase «Escribe el guion del encargo X» y pégala en Claude Code: Claude verifica los datos, escribe el guion y fabrica el vídeo.
-4. Los vídeos aparecen en `~/Movies/Punto de Control/<fecha>/TikTok/` y `YouTube Shorts/`, con un `.txt` de textos listos y `_revisar.md`.
+1. **Elige y aprueba.** En «Ideas para hoy» pulsa **Enviar al Estudio**, luego **Aprobar idea**. Copia la frase
+   «Escribe el guion del encargo X» y pégala en Claude Code (o escribe `/guiones-del-dia`).
+2. **Revisa el guion y el vídeo.** Cuando aparezca el guion, léelo («Ver el guion completo»: ganchos, escenas y fuentes) y
+   pulsa **Aprobar guion** → **Crear vídeo**. Verás la etapa (Voces → Montaje → Calidad). Mira el vídeo y pulsa
+   **Aprobar vídeo** o **Pedir cambios**.
+3. **Exporta y publica.** Pulsa **Exportar**: cuando ponga «Disponible en el Mac (hash comprobado)», los archivos están en
+   `~/Movies/Punto de Control/<fecha>/TikTok/` y `YouTube Shorts/` (`.mp4`, `.txt` para copiar, `.srt`, portada y
+   manifiesto). Súbelos y pulsa **Marcar subido** con la URL.
 
-El plan completo y los hitos siguientes están en `docs/plan-v2.md`.
+Si cambias el guion después de aprobar, las aprobaciones de guion y vídeo se anulan solas. Si falla la voz o el montaje,
+**Reintentar** no rehace el guion. Estado del proyecto: `docs/ESTADO.md` · plan completo: `docs/plan-v2.md`.
 
 ## Agentes que gestionan el canal (automáticos)
 | Agente | Cuándo | Qué hace |

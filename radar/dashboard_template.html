@@ -117,23 +117,42 @@
   .xbadge{color:#86EFAC;font-weight:700;font-variant-numeric:tabular-nums}
   .tblwrap{overflow-x:auto}
   @media (max-width:640px){.gap{grid-template-columns:minmax(0,1fr) 52px}.gap .track{display:none}}
-  /* fábrica (solo en el Estudio local) */
+  [hidden]{display:none!important}
+  /* estudio (solo en el Estudio local: python -m estudio) */
   .btn{background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
   .btn:hover{border-color:var(--faint)}
+  .btn:focus-visible,.fab-idea select:focus-visible,.stp:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .btn.pri{background:var(--accent);border-color:var(--accent);color:#111}
   .btn.pri:hover{background:#FB923C}
-  .btn:disabled{opacity:.5;cursor:default}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
   .fab-ideas{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
   .fab-idea{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
-  .fab-idea .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .fab-idea label.chk{display:flex;gap:5px;align-items:center;font-size:12.5px;color:var(--muted);cursor:pointer}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  label.chk{display:flex;gap:5px;align-items:center;font-size:12.5px;color:var(--muted);cursor:pointer}
   .fab-idea select{padding:5px 8px;font-size:12.5px}
-  .job{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:10px 0;border-top:1px solid var(--border);align-items:center}
-  .job:first-child{border-top:0}
-  .job .track{grid-column:1/-1;height:6px}
-  .ask{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border:1px solid rgba(249,115,22,.4);border-radius:8px;padding:8px 10px;font-size:13px;grid-column:1/-1}
+  .pieza{border:1px solid var(--border2);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--surface)}
+  .steps{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0;padding:0;list-style:none}
+  .steps li{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--border2);color:var(--faint)}
+  .steps li.hecho{color:#86EFAC;border-color:rgba(34,197,94,.45)}
+  .steps li.hecho::before{content:"✓ "}
+  .steps li.aqui{color:var(--text);border-color:var(--accent);background:var(--accent-soft);font-weight:700}
+  .steps li.aqui::before{content:"● "}
+  .sig{font-size:13px;color:#E4E4E7;margin:4px 0 8px}
+  .sig b{color:var(--accent)}
+  .ask{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border:1px solid rgba(249,115,22,.4);border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
   .ask code{background:rgba(0,0,0,.35);padding:2px 6px;border-radius:5px}
-  .qc-ok{color:#86EFAC} .qc-bad{color:#FCA5A5}
+  .err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.4);border-radius:8px;padding:8px 10px;font-size:12.5px;color:#FCA5A5;margin:6px 0}
+  .err ul,.esc ul{margin:4px 0 0 18px;padding:0}
+  .ok{color:#86EFAC} .bad{color:#FCA5A5}
+  .rev{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr);gap:14px;margin-top:8px}
+  .rev video{width:100%;aspect-ratio:9/16;background:#000;border-radius:8px}
+  .esc{border-top:1px solid var(--border);padding:6px 0;font-size:13px}
+  .esc .who{font-weight:700;margin-right:6px}
+  .esc .pan{color:var(--faint);font-size:12px}
+  .af{font-size:12px;color:var(--muted)}
+  details.gu summary{cursor:pointer;color:var(--muted);font-size:12.5px;margin:6px 0}
+  @media (max-width:640px){.rev{grid-template-columns:1fr}.rev video{max-width:260px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
   #tip{position:fixed;pointer-events:none;background:#1C1C20;border:1px solid var(--border2);border-radius:8px;padding:7px 10px;font-size:12px;display:none;z-index:9;box-shadow:0 6px 24px rgba(0,0,0,.5)}
   #tip b{display:block;font-size:14px}
   #tip span{color:var(--muted)}
@@ -179,7 +198,7 @@
     <main>
       <div class="card">
         <div class="tabs" role="tablist">
-          <button role="tab" aria-selected="false" data-tab="fabrica" hidden>Fábrica</button>
+          <button role="tab" aria-selected="false" data-tab="fabrica" hidden>Estudio</button>
           <button role="tab" aria-selected="true" data-tab="radar">Radar de contenido</button>
           <button role="tab" aria-selected="false" data-tab="oportunidades">Oportunidades</button>
           <button role="tab" aria-selected="false" data-tab="creators">Creadores</button>
@@ -200,10 +219,15 @@
         </div>
         <div data-panel="fabrica" hidden>
           <div class="toolbar"><span id="fab-info"></span><span style="flex:1"></span>
-            <button class="btn" id="fab-carpeta">Abrir carpeta</button>
-            <button class="btn pri" id="fab-pack">Crear el pack del día</button></div>
-          <div class="op"><h3>Mejores ideas ahora</h3><div id="fab-ideas" class="fab-ideas"></div>
-            <h3>Encargos</h3><div id="fab-trabajos"></div></div>
+            <button class="btn" id="fab-mano">Nueva idea a mano</button>
+            <button class="btn" id="fab-carpeta">Abrir la carpeta del Mac</button></div>
+          <form id="fab-mano-form" class="fab-idea" hidden style="margin-bottom:10px">
+            <label class="am">Título de la idea <input id="mano-titulo" type="search" required minlength="6" style="width:100%"></label>
+            <label class="am">Por qué ahora (opcional) <input id="mano-porque" type="search" style="width:100%"></label>
+            <div class="row"><button class="btn pri" type="submit">Enviar al Estudio</button></div>
+          </form>
+          <div class="op"><h3>Piezas en el Estudio</h3><div id="fab-piezas" aria-live="polite"></div>
+            <h3>Ideas para hoy</h3><div id="fab-ideas" class="fab-ideas"></div></div>
         </div>
         <div data-panel="oportunidades" hidden><div id="oportunidades" class="op"></div></div>
         <div data-panel="creators" hidden><div id="creators"></div></div>
@@ -557,8 +581,9 @@ $('#csv').addEventListener('click', () => {
     download: `gta6-radar-${new Date().toISOString().slice(0, 10)}.csv`});
   document.body.append(a); a.click(); a.remove();
 });
-// ---------- fábrica (solo aparece si el panel lo sirve el Estudio: python -m estudio)
-const FAB = {formatos: {}, plataformas: {}, timer: null};
+// ---------- estudio (solo aparece si el panel lo sirve el Estudio: python -m estudio)
+const FAB = {variantes: {}, plataformas: {}, ultimo: '', abiertos: new Set()};
+const ETAPAS = ['Brief', 'Guion', 'Montaje', 'Revisión', 'Exportación'];
 async function api(path, body) {
   const r = await fetch(path, body ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)} : {});
   const data = await r.json().catch(() => ({}));
@@ -569,69 +594,134 @@ function showTab(name) {
   document.querySelectorAll('[role=tab]').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === name));
   document.querySelectorAll('[data-panel]').forEach(p => p.hidden = p.dataset.panel !== name);
 }
+function boton(texto, fn, pri) {
+  const b = el('button', {class: 'btn' + (pri ? ' pri' : ''), type: 'button', text: texto});
+  b.addEventListener('click', async () => { b.disabled = true;
+    try { await fn(); } catch (e) { alert(e.message); } finally { b.disabled = false; await fabPiezas(true); } });
+  return b;
+}
 async function fabIdeas() {
   const d = await api('/api/ideas');
-  FAB.formatos = d.formatos; FAB.plataformas = d.plataformas;
-  $('#fab-info').textContent = `${d.ideas.length} ideas · los vídeos se guardan en ${d.carpeta}`;
+  FAB.variantes = d.variantes; FAB.plataformas = d.plataformas;
+  $('#fab-info').textContent = (d.demo ? 'Ideas de DEMOSTRACIÓN (datos inventados) · ' : '') + `los vídeos se exportan a ${d.carpeta}`;
   $('#fab-ideas').replaceChildren(...(d.ideas.length ? d.ideas.map(i => {
-    const fmtSel = el('select', {'aria-label': 'Formato'}, ...Object.entries(FAB.formatos).map(([k, v]) => el('option', {value: k, text: v})));
-    fmtSel.value = i.formato;
+    const sel = el('select', {'aria-label': 'Formato'}, ...Object.entries(FAB.variantes).map(([k, [f, n]]) => el('option', {value: k, text: `${f} · ${n}`})));
+    sel.value = i.variante;
     const checks = Object.entries(FAB.plataformas).map(([k, v]) => { const c = el('input', {type: 'checkbox', value: k});
       c.checked = i.plataformas.includes(k); return [c, el('label', {class: 'chk'}, c, v)]; });
-    const crear = el('button', {class: 'btn pri', text: 'Crear'});
-    crear.addEventListener('click', async () => {
-      crear.disabled = true;
-      try { await api('/api/crear', {idea_id: i.id, formato: fmtSel.value, plataformas: checks.filter(([c]) => c.checked).map(([c]) => c.value)});
-        crear.textContent = 'Encargado ✓'; fabTrabajos(); }
-      catch (e) { alert(e.message); crear.disabled = false; } });
-    const desc = el('button', {class: 'btn', text: 'Descartar'});
-    desc.addEventListener('click', async () => { await api('/api/descartar', {idea_id: i.id}); fabIdeas(); });
     const link = (i.fuentes || [])[0];
     return el('div', {class: 'fab-idea'},
-      el('div', {class: 'badges'}, el('span', {class: 'b s-info', text: i.origen}), el('span', {class: 'b', text: `score ${i.score}`})),
+      el('div', {class: 'badges'}, el('span', {class: 'b ' + (i.demo ? 's-warn' : 's-info'), text: i.origen})),
       el('div', {class: 'vt', text: i.titulo}), el('div', {class: 'am', text: i.por_que}),
-      link && safeUrl(link.url) ? el('a', {class: 'am', href: safeUrl(link.url), target: '_blank', rel: 'noopener', text: 'Ver de dónde sale ↗'}) : null,
-      el('div', {class: 'row'}, fmtSel, ...checks.map(([, l]) => l)),
-      el('div', {class: 'row'}, crear, desc));
-  }) : [el('div', {class: 'empty', text: 'No hay ideas ahora mismo. Descarga los datos del Radar o espera a la próxima ejecución.'})]));
+      link && safeUrl(link.url) ? el('a', {class: 'am', href: safeUrl(link.url), target: '_blank', rel: 'noopener', text: 'Ver la señal ↗'}) : null,
+      el('div', {class: 'row'}, sel, ...checks.map(([, l]) => l)),
+      el('div', {class: 'row'},
+        boton('Enviar al Estudio', async () => { await api('/api/enviar', {idea_id: i.id, variante: sel.value,
+          plataformas: checks.filter(([c]) => c.checked).map(([c]) => c.value)}); }, true),
+        boton('Descartar…', async () => { const m = prompt('¿Por qué la descartas? (sirve para aprender)');
+          if (m) { await api('/api/descartar-idea', {idea_id: i.id, motivo: m}); await fabIdeas(); } })));
+  }) : [el('div', {class: 'empty', text: 'No hay ideas ahora mismo. Descarga los datos del Radar o añade una a mano.'})]));
 }
-const ESTADO = {esperando_guion: ['s-warn', 'Esperando guion'], fabricando: ['s-info', 'Fabricando'], listo: ['s-good', 'Listo'], error: ['s-crit', 'Error']};
-async function fabTrabajos() {
-  const {trabajos} = await api('/api/trabajos');
-  $('#fab-trabajos').replaceChildren(...(trabajos.length ? trabajos.map(t => {
-    const [cls, txt] = ESTADO[t.estado] || ['', t.estado];
-    const kids = [
-      el('div', {}, el('div', {class: 'vt', text: t.idea.titulo || t.idea_id}),
-        el('div', {class: 'meta'}, el('span', {class: 'b ' + cls, text: txt}), el('span', {text: FAB.formatos[t.formato] || t.formato}),
-          el('span', {text: t.plataformas.map(p => FAB.plataformas[p] || p).join(' + ')}), el('span', {text: `encargo ${t.id}`}),
-          t.paso ? el('span', {text: t.paso}) : null)),
-      t.estado === 'listo' ? (() => { const b = el('button', {class: 'btn', text: 'Abrir carpeta'});
-        b.addEventListener('click', () => api('/api/abrir-carpeta', {trabajo_id: t.id})); return b; })() : el('span'),
-      el('div', {class: 'track'}, el('div', {class: 'fill', style: `width:${Math.round((t.progreso || 0) * 100)}%`}))];
-    if (t.estado === 'esperando_guion') {
-      const frase = `Escribe el guion del encargo ${t.id}`;
-      const copiar = el('button', {class: 'btn', text: 'Copiar'});
-      copiar.addEventListener('click', async () => { try { await navigator.clipboard.writeText(frase); copiar.textContent = 'Copiado ✓'; } catch { copiar.textContent = 'Cópialo a mano'; } });
-      kids.push(el('div', {class: 'ask'}, 'Pídeselo a Claude en el chat:', el('code', {text: frase}), copiar));
+function pasos(p) {
+  const i = ETAPAS.indexOf(p.etapa === 'Publicado' ? 'Exportación' : p.etapa);
+  return el('ol', {class: 'steps', 'aria-label': 'Etapas'}, ...ETAPAS.map((e, j) =>
+    el('li', {class: j < i || p.etapa === 'Publicado' ? 'hecho' : j === i ? 'aqui' : '', 'aria-current': j === i ? 'step' : null, text: e})));
+}
+function guionDetalle(p, cont) {
+  const det = el('details', {class: 'gu'}, el('summary', {text: 'Ver el guion completo'}));
+  if (FAB.abiertos.has(p.id)) det.open = true;
+  det.addEventListener('toggle', async () => {
+    if (!det.open) { FAB.abiertos.delete(p.id); return; }
+    FAB.abiertos.add(p.id);
+    if (det.dataset.cargado) return;
+    const d = await api(`/api/piezas/${p.id}`); const g = d.guion.contenido; det.dataset.cargado = 1;
+    if (!g) return;
+    det.append(el('div', {class: 'am'}, 'Ganchos: ', ...g.ganchos.map((x, k) => el('span', {class: 'b' + (k === g.gancho_elegido ? ' s-good' : ''), style: 'margin:2px', text: x}))),
+      ...g.escenas.map(e => el('div', {class: 'esc'}, el('span', {class: 'who', text: e.voz === 'leo' ? 'Leo' : 'Sofi'}), e.texto,
+        e.en_pantalla ? el('div', {class: 'pan', text: 'En pantalla: ' + e.en_pantalla}) : null,
+        (e.afirmaciones || []).length ? el('ul', {}, ...e.afirmaciones.map(a => el('li', {class: 'af'}, `[${a.etiqueta}] ${a.texto} · `,
+          safeUrl(a.fuente) ? el('a', {href: safeUrl(a.fuente), target: '_blank', rel: 'noopener', text: 'fuente'}) : 'sin fuente', ` · ${a.fecha}`))) : null)),
+      el('div', {class: 'am', style: 'margin-top:6px', text: 'Cierre: ' + (g.cierre || '—')}));
+  });
+  cont.append(det);
+}
+function piezaCard(p) {
+  const c = el('article', {class: 'pieza'});
+  const titulo = p.idea.titulo || p.id;
+  c.append(el('div', {class: 'vt', text: titulo}),
+    el('div', {class: 'meta'}, el('span', {text: `${p.formato} · ${p.variante_nombre}`}),
+      el('span', {text: p.plataformas.map(x => FAB.plataformas[x] || x).join(' + ')}), el('span', {text: `encargo ${p.id}`}),
+      p.legado ? el('span', {class: 'b', text: 'antes del flujo de aprobación'}) : null),
+    pasos(p), el('div', {class: 'sig'}, el('b', {text: p.etapa + ': '}), p.siguiente));
+  const acciones = el('div', {class: 'row'});
+  const v = p.version;
+  if (p.etapa === 'Brief') acciones.append(boton('Aprobar idea', () => api(`/api/piezas/${p.id}/aprobar`, {tipo: 'idea'}), true));
+  if (p.etapa === 'Guion') {
+    if (p.guion.estado === 'falta') {
+      const frase = `Escribe el guion del encargo ${p.id}`;
+      c.append(el('div', {class: 'ask'}, 'Pídeselo a Claude en el chat:', el('code', {text: frase}),
+        boton('Copiar', () => navigator.clipboard.writeText(frase))));
     }
-    if (t.error) kids.push(el('div', {class: 'am qc-bad', style: 'grid-column:1/-1', text: t.error}));
-    (t.piezas || []).forEach(p => { const q = p.calidad || {}; const fallos = (q.fallos || []);
-      kids.push(el('div', {class: 'am', style: 'grid-column:1/-1'}, `${FAB.plataformas[p.plataforma] || p.plataforma}: ${Math.round(p.duracion || 0)} s · `,
-        el('span', {class: fallos.length ? 'qc-bad' : 'qc-ok', text: fallos.length ? '✗ ' + fallos.join(' · ') : '✓ control de calidad'}),
-        p.subida_en ? ' · subido' : (() => { const b = el('button', {class: 'btn', style: 'margin-left:8px;padding:3px 8px', text: 'Marcar subido'});
-          b.addEventListener('click', async () => { await api('/api/subido', {pieza_id: p.id}); fabTrabajos(); }); return b; })())); });
-    return el('div', {class: 'job'}, ...kids);
-  }) : [el('div', {class: 'empty', text: 'Aún no hay encargos. Pulsa Crear en una idea.'})]));
+    if (p.guion.errores.length) c.append(el('div', {class: 'err'}, 'El guion no es válido:', el('ul', {}, ...p.guion.errores.map(x => el('li', {text: x})))));
+    if (p.guion.estado === 'valido') acciones.append(boton('Aprobar guion', () => api(`/api/piezas/${p.id}/aprobar`, {tipo: 'guion'}), true));
+  }
+  if ((p.guion.avisos || []).length) c.append(el('div', {class: 'am', text: 'Avisos: ' + p.guion.avisos.join(' · ')}));
+  if (p.guion.estado === 'valido') guionDetalle(p, c);
+  if (p.etapa === 'Montaje') {
+    const enMarcha = v && ['pendiente', 'en_curso'].includes(v.estado_produccion) && v.guion_hash === p.guion.hash;
+    if (!enMarcha && !(v && v.estado_produccion === 'fallido' && v.guion_hash === p.guion.hash))
+      acciones.append(boton('Crear vídeo', () => api(`/api/piezas/${p.id}/crear`, {}), true));
+    if (v && v.estado_produccion === 'fallido') acciones.append(boton(`Reintentar (${v.intentos}/3)`, () => api(`/api/piezas/${p.id}/reintentar`, {}), true));
+    if (v && v.estado_produccion === 'pendiente') acciones.append(boton('Cancelar', () => api(`/api/piezas/${p.id}/cancelar`, {})));
+  }
+  if (['Revisión', 'Exportación', 'Publicado'].includes(p.etapa) && v && v.video && !p.legado) {
+    const q = v.calidad || {};
+    c.append(el('div', {class: 'rev'},
+      el('video', {src: `/media/${v.id}.mp4`, controls: '', preload: 'metadata', playsinline: ''}),
+      el('div', {}, el('div', {class: 'am', text: `Versión ${v.n} · ${Math.round(v.duracion || 0)} s`}),
+        ...Object.entries(q).map(([pl, r]) => el('div', {class: 'am'}, `${FAB.plataformas[pl] || pl}: `,
+          el('span', {class: r.ok ? 'ok' : 'bad', text: r.ok ? '✓ control de calidad' : '✗ ' + r.fallos.join(' · ')}))),
+        ...p.cambios.filter(x => x.version_n).map(x => el('div', {class: 'am', text: `Cambios pedidos (v${x.version_n}): ${x.nota}`})))));
+  }
+  if (p.etapa === 'Revisión') acciones.append(
+    boton('Aprobar vídeo', () => api(`/api/piezas/${p.id}/aprobar`, {tipo: 'video'}), true),
+    boton('Pedir cambios…', async () => { const n = prompt('¿Qué hay que cambiar?'); if (n) await api(`/api/piezas/${p.id}/cambios`, {nota: n}); }));
+  if (['Exportación', 'Publicado'].includes(p.etapa)) {
+    const ex = p.exportacion || {};
+    if (!p.legado && p.plataformas.some(pl => !(ex[pl] || {}).disponible))
+      acciones.append(boton('Exportar a ' + p.plataformas.map(x => FAB.plataformas[x]).join(' y '), () => api(`/api/piezas/${p.id}/exportar`, {}), true));
+    p.plataformas.forEach(pl => { const e = ex[pl]; if (!e) return;
+      c.append(el('div', {class: 'am'}, `${FAB.plataformas[pl]}: `,
+        el('span', {class: e.disponible ? 'ok' : 'bad', text: e.disponible ? (p.legado ? '✓ en la carpeta del Mac' : '✓ Disponible en el Mac (hash comprobado)') : '✗ ' + e.motivo}),
+        e.subida_en ? el('span', {}, ' · subido ', safeUrl(e.url) ? el('a', {href: safeUrl(e.url), target: '_blank', rel: 'noopener', text: 'ver'}) : '') :
+          (e.disponible && !p.legado ? boton('Marcar subido…', async () => { const u = prompt(`URL del vídeo publicado en ${FAB.plataformas[pl]}`);
+            if (u) await api(`/api/piezas/${p.id}/subido`, {plataforma: pl, url: u}); }) : null))); });
+    if (Object.values(ex).some(e => e.disponible)) acciones.append(boton('Abrir en el Finder', () => api('/api/abrir-carpeta', {pieza: p.id})));
+  }
+  if (!['Exportación', 'Publicado', 'Descartada'].includes(p.etapa))
+    acciones.append(boton('Descartar…', async () => { const m = prompt('¿Por qué la descartas?'); if (m) await api(`/api/piezas/${p.id}/descartar`, {motivo: m}); }));
+  c.append(acciones);
+  return c;
+}
+async function fabPiezas(forzar) {
+  const d = await api('/api/piezas');
+  const firma = JSON.stringify(d.piezas);
+  if (!forzar && firma === FAB.ultimo) return;   // no repintar si nada cambió (no corta el vídeo)
+  FAB.ultimo = firma;
+  $('#fab-piezas').replaceChildren(...(d.piezas.length ? d.piezas.map(piezaCard)
+    : [el('div', {class: 'empty', text: 'Aún no hay piezas. Elige una idea abajo y pulsa «Enviar al Estudio».'})]));
 }
 async function initFabrica() {
   if (!/^https?:$/.test(location.protocol)) return;
   try { await fabIdeas(); } catch { return; }  // sin Estudio (GitHub Pages o archivo): la pestaña no aparece
   const tab = document.querySelector('[data-tab=fabrica]'); tab.hidden = false; showTab('fabrica');
-  $('#fab-pack').addEventListener('click', async e => { e.target.disabled = true;
-    try { await api('/api/crear-pack', {}); await fabTrabajos(); } catch (err) { alert(err.message); } e.target.disabled = false; });
   $('#fab-carpeta').addEventListener('click', () => api('/api/abrir-carpeta', {}));
-  await fabTrabajos();
-  FAB.timer = setInterval(() => fabTrabajos().catch(() => {}), 3000);
+  $('#fab-mano').addEventListener('click', () => { $('#fab-mano-form').hidden = !$('#fab-mano-form').hidden; });
+  $('#fab-mano-form').addEventListener('submit', async e => { e.preventDefault();
+    try { await api('/api/enviar', {a_mano: true, titulo: $('#mano-titulo').value, por_que: $('#mano-porque').value, variante: 'ultima_hora', plataformas: ['tiktok', 'shorts']});
+      e.target.reset(); e.target.hidden = true; await fabPiezas(true); } catch (err) { alert(err.message); } });
+  await fabPiezas(true);
+  setInterval(() => fabPiezas(false).catch(() => {}), 3000);
 }
 
 renderStatic(); renderOportunidades(); render(); initFabrica();

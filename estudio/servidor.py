@@ -1,33 +1,40 @@
-"""Servidor local del Estudio: el panel del Radar + la pestaña Fábrica y su API.
+"""Servidor local del Estudio: el panel del Radar + la pestaña Estudio y su API.
 
-    python -m estudio            → http://localhost:8080
+    python -m estudio               → http://localhost:8080
+    python -m estudio --puerto 8090 → si el 8080 está ocupado
 
-Solo escucha en tu Mac (127.0.0.1). Sin dependencias nuevas: librería estándar de Python.
+Solo escucha en tu Mac (127.0.0.1). Sin dependencias nuevas (librería estándar de Python):
+el proyecto ya usa Python y no hace falta un framework para unas pocas rutas.
 """
 from __future__ import annotations
 
 import json
-import shutil
+import re
 import subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from fabrica import cola
 from radar import dashboard
 from radar.config import DATA_DIR, cfg
 
-from . import db, ideas
+from . import db, flujo, ideas, rutas
 
 SITE = DATA_DIR / "estudio_site"
+RE_ID = re.compile(r"^[0-9a-f]{6}$")
+RE_VERSION = re.compile(r"^([0-9a-f]{6})-v(\d{1,3})$")
 
 
-def carpeta_base() -> Path:
-    return Path(cfg().get("fabrica", {}).get("carpeta_base", "~/Movies/Punto de Control")).expanduser()
-
-
-def _ideas() -> list[dict]:
+def _ideas() -> tuple[list[dict], bool]:
     con_r, con_e = ideas.radar_db(), db.connect()
     try:
-        return ideas.listar(con_r, db.descartadas(con_e))
+        lista = ideas.listar(con_r, db.descartadas(con_e))
+        esperando = [{"encargo": e["id"], "idea": e["idea"], "variante": e["variante"],
+                      "guion_en": e["guion"]["ruta"], "errores": e["guion"]["errores"]}
+                     for e in (flujo.estado(con_e, t["id"]) for t in db.trabajos(con_e))
+                     if e["etapa"] == "Guion"]
+        ideas.exportar_dia(lista, esperando)  # estudio/ideas/AAAA-MM-DD.json para /guiones-del-dia
+        return lista, ideas.es_demo(con_r)
     finally:
         con_r.close()
         con_e.close()
@@ -36,25 +43,25 @@ def _ideas() -> list[dict]:
 def _panel() -> bytes:
     con = ideas.radar_db()
     try:
-        demo = Path(con.execute("PRAGMA database_list").fetchone()["file"]).name == "demo.db"
-        return dashboard.build(con, out_dir=SITE, demo=demo).read_bytes()
+        return dashboard.build(con, out_dir=SITE, demo=ideas.es_demo(con)).read_bytes()
     finally:
         con.close()
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "Estudio/1.0"
+    server_version = "Estudio/2.0"
 
-    def log_message(self, fmt, *args):  # sin ruido en la terminal salvo errores
-        if args and str(args[1]).startswith(("4", "5")):
+    def log_message(self, fmt, *args):
+        if args and str(args[1]).startswith("5"):
             super().log_message(fmt, *args)
 
-    # ---------------------------------------------------------- utilidades
-    def _send(self, code: int, body: bytes, ctype: str):
+    def _send(self, code: int, body: bytes, ctype: str, extra: dict | None = None):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        for k, v in (extra or {}).items():
+            self.send_header(k, v)
         self.end_headers()
         self.wfile.write(body)
 
@@ -69,76 +76,125 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             return {}
 
-    # ---------------------------------------------------------- rutas
+    def _media(self, vid: str):
+        """Vídeo de una versión, buscado en la base de datos (nunca una ruta que venga del navegador)."""
+        m = RE_VERSION.match(vid)
+        v = db.version(db.connect(), vid) if m else None
+        if not v or not v.get("video_ruta") or not Path(v["video_ruta"]).exists():
+            return self._json({"error": "Vídeo no disponible"}, 404)
+        ruta = Path(v["video_ruta"])
+        tam = ruta.stat().st_size
+        rango = re.match(r"bytes=(\d+)-(\d*)", self.headers.get("Range", ""))
+        a, b = (int(rango.group(1)), int(rango.group(2) or tam - 1)) if rango else (0, tam - 1)
+        b = min(b, tam - 1, a + 8 * 1024 * 1024)  # trozos de 8 MB para que Safari pueda saltar
+        with open(ruta, "rb") as f:
+            f.seek(a)
+            datos = f.read(b - a + 1)
+        cab = {"Accept-Ranges": "bytes", "Content-Range": f"bytes {a}-{b}/{tam}"}
+        self._send(206 if rango else 200, datos, "video/mp4", cab)
+
+    # ---------------------------------------------------------- GET
     def do_GET(self):
         path = self.path.split("?")[0]
         try:
             if path in ("/", "/index.html"):
                 return self._send(200, _panel(), "text/html; charset=utf-8")
             if path == "/api/ideas":
-                return self._json({"ideas": _ideas(), "formatos": ideas.FORMATOS, "plataformas": ideas.PLATAFORMAS,
-                                   "carpeta": str(carpeta_base())})
-            if path == "/api/trabajos":
+                lista, demo = _ideas()
+                return self._json({"ideas": lista, "demo": demo, "variantes": ideas.VARIANTES, "formatos": ideas.FORMATOS,
+                                   "plataformas": ideas.PLATAFORMAS, "carpeta": str(rutas.carpeta_base())})
+            if path == "/api/piezas":
                 con = db.connect()
-                return self._json({"trabajos": db.trabajos(con)})
-            if path.startswith("/api/trabajos/"):
-                t = db.trabajo(db.connect(), path.rsplit("/", 1)[1])
-                return self._json(t) if t else self._json({"error": "No existe ese encargo"}, 404)
+                return self._json({"piezas": [flujo.estado(con, t["id"]) for t in db.trabajos(con)]})
+            m = re.match(r"^/api/piezas/([0-9a-f]{6})$", path)
+            if m:
+                con = db.connect()
+                st = flujo.estado(con, m.group(1))
+                gi = flujo.leer_guion(db.trabajo(con, m.group(1)))
+                st["guion"]["contenido"] = gi.get("guion")
+                return self._json(st)
+            m = re.match(r"^/media/([0-9a-f]{6}-v\d{1,3})\.mp4$", path)
+            if m:
+                return self._media(m.group(1))
             return self._json({"error": "No encontrado"}, 404)
+        except flujo.Bloqueado as e:
+            return self._json({"error": str(e)}, 404)
         except SystemExit as e:  # sin datos del Radar
             return self._json({"error": str(e)}, 503)
 
+    # ---------------------------------------------------------- POST
     def do_POST(self):
         path, body = self.path.split("?")[0], self._body()
         con = db.connect()
-        if path in ("/api/crear", "/api/crear-pack"):
-            todas = {i["id"]: i for i in _ideas()}
-            if path == "/api/crear":
-                idea = todas.get(str(body.get("idea_id", "")))
-                if not idea:
-                    return self._json({"error": "Esa idea ya no está en la lista"}, 400)
-                elegidas = [(idea, body.get("formato"), body.get("plataformas"))]
-            else:
-                n = int(cfg().get("fabrica", {}).get("pack_del_dia", 5))
-                elegidas = [(i, None, None) for i in list(todas.values())[:n]]
-            creados = []
-            for idea, formato, plats in elegidas:
-                formato = formato if formato in ideas.FORMATOS else idea["formato"]
-                plats = [p for p in (plats if isinstance(plats, list) else idea["plataformas"]) if p in ideas.PLATAFORMAS]
-                if not plats:
-                    return self._json({"error": "Marca al menos una plataforma"}, 400)
-                creados.append(db.crear_trabajo(con, idea, formato, plats))
-            return self._json({"trabajos": creados})
-        if path == "/api/descartar":
-            iid = str(body.get("idea_id", ""))[:80]
-            if not iid:
-                return self._json({"error": "Falta la idea"}, 400)
-            db.descartar(con, iid)
-            return self._json({"ok": True})
-        if path == "/api/abrir-carpeta":
-            base = carpeta_base()
-            t = db.trabajo(con, str(body.get("trabajo_id", ""))) if body.get("trabajo_id") else None
-            destino = Path(t["piezas"][0]["ruta"]).parent.parent if t and t["piezas"] else base
-            destino.mkdir(parents=True, exist_ok=True)
-            subprocess.run(["open", str(destino)], check=False)
-            return self._json({"ok": True})
-        if path == "/api/subido":
-            pieza = con.execute("SELECT * FROM piezas WHERE id=?", (str(body.get("pieza_id", "")),)).fetchone()
-            if not pieza:
-                return self._json({"error": "No existe esa pieza"}, 404)
-            ruta = Path(pieza["ruta"])
-            subidos = ruta.parent / "subidos"
-            subidos.mkdir(exist_ok=True)
-            for f in ruta.parent.glob(ruta.stem + "*"):  # vídeo, .txt y portada
-                shutil.move(str(f), subidos / f.name)
-            con.execute("UPDATE piezas SET subida_en=datetime('now'), ruta=? WHERE id=?", (str(subidos / ruta.name), pieza["id"]))
-            con.commit()
-            return self._json({"ok": True})
-        return self._json({"error": "No encontrado"}, 404)
+        try:
+            if path == "/api/enviar":
+                if body.get("a_mano"):
+                    idea = flujo.idea_a_mano(body.get("titulo"), body.get("por_que"))
+                else:
+                    idea = {i["id"]: i for i in _ideas()[0]}.get(str(body.get("idea_id", "")))
+                    if not idea:
+                        raise flujo.Bloqueado("Esa idea ya no está en la lista. Recarga la página.")
+                variante = body.get("variante") or idea.get("variante", "ultima_hora")
+                plats = body.get("plataformas") if isinstance(body.get("plataformas"), list) else idea.get("plataformas", [])
+                t = flujo.enviar_al_estudio(con, idea, variante, plats)
+                return self._json(flujo.estado(con, t["id"]))
+            if path == "/api/descartar-idea":
+                iid, motivo = str(body.get("idea_id", ""))[:80], str(body.get("motivo", "")).strip()
+                if not iid or not motivo:
+                    raise flujo.Bloqueado("Di por qué la descartas: el motivo sirve para aprender.")
+                db.descartar(con, iid, motivo[:300])
+                return self._json({"ok": True})
+            if path == "/api/abrir-carpeta":
+                destino = rutas.carpeta_base()
+                tid = str(body.get("pieza", ""))
+                if RE_ID.match(tid):
+                    exp = flujo.estado(con, tid)["exportacion"]
+                    ruta = next((e["ruta"] for e in exp.values() if e.get("ruta")), None)
+                    if ruta:
+                        destino = Path(ruta).parent.parent
+                destino.mkdir(parents=True, exist_ok=True)
+                subprocess.run(["open", str(destino)], check=False)
+                return self._json({"ok": True})
+            m = re.match(r"^/api/piezas/([0-9a-f]{6})/(aprobar|cambios|crear|reintentar|cancelar|exportar|subido|descartar)$", path)
+            if not m:
+                return self._json({"error": "No encontrado"}, 404)
+            tid, accion = m.groups()
+            if accion == "aprobar":
+                return self._json(flujo.aprobar(con, tid, str(body.get("tipo", ""))))
+            if accion == "cambios":
+                return self._json(flujo.pedir_cambios(con, tid, body.get("nota", "")))
+            if accion == "crear":
+                flujo.crear_video(con, tid)
+            elif accion == "reintentar":
+                flujo.reintentar(con, tid)
+            elif accion == "cancelar":
+                flujo.cancelar(con, tid)
+            elif accion == "exportar":
+                res = flujo.exportar(con, tid)
+                if cfg().get("estudio", {}).get("abrir_finder_al_terminar", True) and \
+                        any("ya exportado" not in r["estado"] for r in res.values()):
+                    subprocess.run(["osascript", "-e", 'display notification "Disponible en el Mac" with title '
+                                    '"Punto de Control" sound name "Glass"'], check=False, capture_output=True)
+            elif accion == "subido":
+                return self._json(flujo.marcar_subido(con, tid, str(body.get("plataforma", "")), str(body.get("url", ""))))
+            elif accion == "descartar":
+                return self._json(flujo.descartar_pieza(con, tid, body.get("motivo", "")))
+            return self._json(flujo.estado(con, tid))
+        except flujo.Bloqueado as e:
+            return self._json({"error": str(e)}, 409)
+
+
+def usar_ffmpeg_completo() -> None:
+    """El ffmpeg normal de Homebrew no trae subtítulos (libass); si está ffmpeg-full, se usa ese."""
+    import os
+    full = "/opt/homebrew/opt/ffmpeg-full/bin"
+    if Path(full).exists() and not os.environ.get("PATH", "").startswith(full):
+        os.environ["PATH"] = full + os.pathsep + os.environ.get("PATH", "")
 
 
 def main():
     import argparse
+    usar_ffmpeg_completo()
     ap = argparse.ArgumentParser(description="Estudio de Punto de Control")
     ap.add_argument("--puerto", type=int, default=int(cfg().get("estudio", {}).get("puerto", 8080)))
     puerto = ap.parse_args().puerto
@@ -146,7 +202,8 @@ def main():
         srv = ThreadingHTTPServer(("127.0.0.1", puerto), Handler)
     except OSError:
         raise SystemExit(f"El puerto {puerto} está ocupado. Cierra lo que lo usa (p. ej. otro «python -m http.server») "
-                         f"o cambia estudio.puerto en config.yaml.")
+                         f"o usa: python -m estudio --puerto 8090")
+    cola.arrancar_hilo()
     print(f"🎬 Estudio en http://localhost:{puerto}  (Ctrl+C para cerrar)")
     try:
         srv.serve_forever()

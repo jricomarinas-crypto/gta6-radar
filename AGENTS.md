@@ -33,17 +33,22 @@ python tools/datos_demo.py                         # panel demo → site/index.h
 python -m podcast.run --demo --sin-subir           # episodio demo → output/<fecha>/ (necesita ffmpeg)
 python tools/descargar_datos.py && python -m radar.chat   # preguntar al Radar con datos reales
 gh run list --limit 10                             # estado de GitHub Actions
-python -m estudio                                  # Estudio en http://localhost:8080 (pestaña Fábrica)
-python -m fabrica.encargo [id]                     # encargos que esperan guion / plantilla del guion
-python -m fabrica.producir <id> output/guiones/<id>.json   # fabrica el vídeo → ~/Movies/Punto de Control/<fecha>/
+python -m estudio                                  # Estudio en http://localhost:8080 (--puerto 8090 si está ocupado)
+python -m fabrica.encargo [id]                     # piezas que esperan guion / detalle de una
+python -m fabrica.encargo --validar <ruta.json>    # valida un guion
+python -m unittest tests.test_corte1 -v            # pruebas del corte 1 (carpeta temporal, no toca tus datos)
 ```
 
-## Fábrica (plan v2, `docs/plan-v2.md`) — modo gratis
-Sin API de Claude: cuando Javier diga «Escribe el guion del encargo X»:
-1. `python -m fabrica.encargo X` para ver la idea, el formato y la plantilla.
-2. Verifica cada dato con búsqueda web en fuentes primarias o medios fiables (nunca otros creadores).
-3. Escribe el JSON en `output/guiones/X.json` (formatos: `lista_pais`, `verdad_bulo`, `ultima_hora`; ver `fabrica/guion.py`).
-4. `python -m fabrica.producir X output/guiones/X.json` (necesita ffmpeg con libass: `/opt/homebrew/opt/ffmpeg-full/bin` en el PATH).
+## Estudio y Fábrica — modo suscripción (0 €)
+Documento maestro: `docs/megaprompt-claude-code.md` (manda sobre `docs/principios-producto.md` y `docs/plan-v2.md`).
+Estado honesto en `docs/ESTADO.md`: actualízalo al terminar cada sesión.
+`ia.modo: suscripcion` → la app no llama a ninguna IA. Cuando Javier diga «Escribe el guion del encargo X» o `/guiones-del-dia`:
+1. `python -m fabrica.encargo X` (idea, formato, ruta del guion en `estudio/guiones/AAAA-MM-DD/X.json`).
+2. Verifica cada dato con búsqueda web en fuentes primarias o medios fiables (nunca otros creadores); anota la fecha.
+3. Escribe el JSON con el esquema de la cabecera de `fabrica/guion.py` y valídalo con `--validar`.
+4. NO apruebes nada: idea, guion y vídeo los aprueba Javier en el Estudio; él pulsa Crear vídeo y Exportar.
+El render necesita ffmpeg con libass (`ffmpeg-full`); el Estudio lo antepone en el PATH solo.
+
 
 ## Reglas que no se rompen
 - **Secretos**: nunca en el código, en commits ni en el chat. Van en GitHub Secrets (`gh secret set NOMBRE`, que pide el valor en la terminal) o en `.env` (ignorado por git).

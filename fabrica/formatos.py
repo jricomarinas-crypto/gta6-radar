@@ -35,7 +35,7 @@ def _fondo() -> Image.Image:
     return _FONDO.copy()
 
 
-def _cabecera(img, guion: dict) -> None:
+def _cabecera(img, guion: dict, titular: str | None = None) -> None:
     d = ImageDraw.Draw(img)
     d.text((X0, 80), cfg()["canal"]["nombre"], font=font(F_BLACK, 34), fill=(255, 255, 255, 235))
     x = X0
@@ -44,7 +44,7 @@ def _cabecera(img, guion: dict) -> None:
     if st:
         col = STATUS.get(st, "#A1A1AA")
         pill(img, (x + 12, 150), "● " + st, font(F_BOLD, 26), rgb(col), rgb(col, 46), pad=(16, 8), outline=rgb(col, 140))
-    f, lines = fit(d, (guion.get("gancho") or guion.get("titulo", "")).upper(), F_BLACK, X1 - X0, 3, 100, 62)
+    f, lines = fit(d, (titular or guion.get("gancho") or guion.get("titulo", "")).upper(), F_BLACK, X1 - X0, 3, 100, 62)
     y = 236
     for i, ln in enumerate(lines):
         col = rgb(GOLD) if i == len(lines) - 1 and len(lines) > 1 else (255, 255, 255, 255)
@@ -139,19 +139,95 @@ def _ultima_hora(img, guion: dict) -> None:
     render._fact_card(img, (x0, y0 + 124, x1, BODY[3]), card, max_head_lines=3, head_size=74, detail_size=36)
 
 
+# ------------------------------------------------------------------ B · comparación (GTA 5 frente a GTA 6)
+def _comparacion(img, guion: dict, activo: int | None) -> None:
+    filas = guion.get("filas") or []
+    x0, y0, x1, y1 = BODY
+    _caja(img, BODY)
+    d = ImageDraw.Draw(img)
+    ca, cb = guion.get("columna_a") or "GTA 5", guion.get("columna_b") or "GTA 6"
+    xa, xb = x0 + 420, x1 - 40
+    d.text((xa, y0 + 42), ca, font=font(F_BLACK, 34), fill=(161, 161, 176, 255), anchor="rm")
+    d.text((xb, y0 + 42), cb, font=font(F_BLACK, 34), fill=rgb(GOLD), anchor="rm")
+    top = y0 + 80
+    row = min(110, (y1 - top - 24) // max(1, len(filas)))
+    fs = max(28, min(42, int(row * 0.38)))
+    for i, fi in enumerate(filas):
+        ry = top + i * row
+        on = activo == i
+        if on:
+            _caja(img, (x0 + 14, ry + 4, x1 - 14, ry + row - 4), fill=rgb(CYAN, 60), outline=rgb(CYAN, 200))
+            d = ImageDraw.Draw(img)
+        a = 255 if on or activo is None else 150
+        cy = ry + row / 2
+        d.text((x0 + 40, cy - fs * 0.9), str(fi.get("aspecto", ""))[:22].upper(), font=font(F_BOLD, 24),
+               fill=(161, 161, 176, a), anchor="lm")
+        d.text((xa, cy + 8), str(fi.get("a", ""))[:14], font=font(F_BOLD, fs), fill=(220, 220, 232, a), anchor="rm")
+        d.text((xb, cy + 8), str(fi.get("b", ""))[:16], font=font(F_BLACK, fs), fill=rgb(GOLD, a) if on else (255, 255, 255, a),
+               anchor="rm")
+
+
+# ------------------------------------------------------------------ C · guía breve (pasos numerados)
+def _guia(img, guion: dict, activo: int | None) -> None:
+    pasos = guion.get("pasos") or []
+    x0, y0, x1, y1 = BODY
+    _caja(img, BODY)
+    d = ImageDraw.Draw(img)
+    row = min(130, (y1 - y0 - 40) // max(1, len(pasos)))
+    for i, p in enumerate(pasos):
+        ry = y0 + 20 + i * row
+        on = activo == i
+        if on:
+            _caja(img, (x0 + 14, ry + 4, x1 - 14, ry + row - 4), fill=rgb(CYAN, 60), outline=rgb(CYAN, 200))
+            d = ImageDraw.Draw(img)
+        a = 255 if on or activo is None else 150
+        cy = ry + row / 2
+        d.ellipse((x0 + 36, cy - 30, x0 + 96, cy + 30), fill=rgb(GOLD if on else PINK, a))
+        d.text((x0 + 66, cy), str(i + 1), font=font(F_BLACK, 34), fill=(12, 12, 22, 255), anchor="mm")
+        f, ls = fit(d, str(p), F_BOLD if not on else F_BLACK, x1 - x0 - 170, 2, 42, 28)
+        ty = cy - (len(ls) * text_h(f)) / 2
+        for ln in ls:
+            d.text((x0 + 122, ty), ln, font=f, fill=(255, 255, 255, a))
+            ty += text_h(f)
+
+
 # ------------------------------------------------------------------ fotograma y montaje
-def fotograma(guion: dict, speaker: str, item: int | None = None, revelado: bool = False) -> Image.Image:
+def fotograma(guion: dict, speaker: str, item: int | None = None, revelado: bool = False,
+              titular: str | None = None) -> Image.Image:
     img = _fondo()
-    _cabecera(img, guion)
+    _cabecera(img, guion, titular)
     f = guion["formato"]
     if f == "lista_pais":
         _lista(img, guion, item)
     elif f == "verdad_bulo":
         _verdad_bulo(img, guion, revelado)
+    elif f == "comparacion":
+        _comparacion(img, guion, item)
+    elif f == "guia":
+        _guia(img, guion, item)
     else:
         _ultima_hora(img, guion)
     _hablante(img, speaker)
     return img.convert("RGB")
+
+
+def _srt_tiempo(t: float) -> str:
+    t = max(0.0, t)
+    h, m, s = int(t // 3600), int(t % 3600 // 60), t % 60
+    return f"{h:02d}:{m:02d}:{int(s):02d},{int(round((s - int(s)) * 1000)):03d}".replace(",1000", ",999")
+
+
+def escribir_srt(lines: list[dict], ruta: Path, max_palabras: int = 6) -> Path:
+    """Subtítulos .srt con los tiempos por palabra de la voz (bloques cortos, legibles en el móvil)."""
+    bloques = []
+    for ln in lines:
+        palabras = ln.get("abs_words") or []
+        for i in range(0, len(palabras), max_palabras):
+            trozo = palabras[i:i + max_palabras]
+            bloques.append((trozo[0][1], trozo[-1][2], " ".join(w for w, _, _ in trozo)))
+    out = [f"{n}\n{_srt_tiempo(a)} --> {_srt_tiempo(max(b, a + 0.3))}\n{texto}\n" for n, (a, b, texto) in enumerate(bloques, 1)]
+    ruta.write_text("\n".join(out), encoding="utf-8")
+    return ruta
 
 
 def _revela_desde(guion: dict) -> int:
@@ -170,10 +246,11 @@ def montar(guion: dict, lines: list[dict], audio: Path, total: float, workdir: P
     for i, ln in enumerate(lines):
         src = guion["lineas"][i]
         item = src.get("item") if isinstance(src.get("item"), int) else None
-        key = (ln["speaker"], item, i >= revela)
+        titular = src.get("en_pantalla") or None
+        key = (ln["speaker"], item, i >= revela, titular)
         if key not in cache:
             p = workdir / f"f{len(cache):02d}.png"
-            fotograma(guion, ln["speaker"], item, i >= revela).save(p)
+            fotograma(guion, ln["speaker"], item, i >= revela, titular).save(p)
             cache[key] = p
         end = lines[i + 1]["start"] if i + 1 < len(lines) else total
         items.append((cache[key], end - prev))
@@ -183,6 +260,6 @@ def montar(guion: dict, lines: list[dict], audio: Path, total: float, workdir: P
     ass = render.write_ass(lines, workdir / "subs.ass", W, H, 78, 480, 100, 3, True)
     lufs = float(cfg().get("fabrica", {}).get("volumen_lufs", -14))
     out = workdir / "video.mp4"
-    bar = {"verdad_bulo": GOLD, "ultima_hora": RED}.get(guion["formato"], CYAN)
+    bar = {"verdad_bulo": GOLD, "ultima_hora": RED, "comparacion": GOLD, "guia": PINK}.get(guion["formato"], CYAN)
     render.ffmpeg_compose(items, audio, ass, out, W, H, WAVE, total, bar_color=bar, fade=True, lufs=lufs)
     return out, portada

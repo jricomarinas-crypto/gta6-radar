@@ -15,6 +15,7 @@ from zoneinfo import ZoneInfo
 
 from radar.config import OUTPUT_DIR, ROOT, cfg
 from radar.db import connect, iso, jdump
+from radar import llm
 from radar.notify import send
 
 from . import editor, publicar, render, script, tts, upload
@@ -29,6 +30,10 @@ def main():
     ap.add_argument("--sin-subir", action="store_true")
     ap.add_argument("--sin-shorts", action="store_true")
     args = ap.parse_args()
+    if not (args.demo or args.guion) and not llm.disponible():
+        print("ℹ IA desactivada (ia.modo: suscripcion): el episodio automático no se genera. "
+              "Los guiones se escriben con Claude Code en el Estudio. Usa --guion ruta.json o --demo.")
+        return
 
     con = connect()
     now = datetime.now(ZoneInfo(cfg()["canal"].get("zona_horaria", "UTC")))

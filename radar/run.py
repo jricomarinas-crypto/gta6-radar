@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import traceback
 
-from . import classify, dashboard, news, oportunidades, scoring, trends, youtube
+from . import classify, dashboard, llm, news, oportunidades, scoring, trends, youtube
 from .briefing import community_questions, daily_briefing
 from .config import cfg, env
 from .db import connect, iso, jdump, prune
@@ -44,7 +44,7 @@ def main():
     run_id = con.execute("INSERT INTO runs(kind,started_at) VALUES('radar',?)", (iso(),)).lastrowid
     con.commit()
     stats: dict = {}
-    has_ai = bool(env("ANTHROPIC_API_KEY"))
+    has_ai = llm.disponible()  # ia.modo=api y clave puesta; en modo suscripción el Radar va sin IA (0 €)
 
     if env("YOUTUBE_API_KEY"):
         step("YouTube", youtube.run_ingestion, stats, con)
@@ -55,7 +55,7 @@ def main():
     if has_ai:
         step("clasificación IA", classify.classify_pending, stats, con)
     else:
-        print("⚠ Sin ANTHROPIC_API_KEY: me salto la clasificación con IA")
+        print("⚠ IA desactivada (ia.modo: suscripcion o sin ANTHROPIC_API_KEY): me salto la clasificación con IA")
     step("scoring", scoring.score_videos, stats, con)
     step("alertas", trends.detect_alerts, stats, con)
 

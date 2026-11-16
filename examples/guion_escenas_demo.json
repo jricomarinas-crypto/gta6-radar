@@ -1,0 +1,27 @@
+{
+  "id": "demo-guia-primera-hora",
+  "oportunidad_id": "demo",
+  "formato": "C",
+  "variante": "guia",
+  "plataformas": ["tiktok", "shorts"],
+  "duracion_objetivo_s": 35,
+  "ganchos": ["DEMO: tu primera hora", "3 cosas antes de jugar", "No cometas este error"],
+  "gancho_elegido": 0,
+  "escenas": [
+    {"voz": "sofi", "texto": "Esto es una demostración de la Fábrica.", "en_pantalla": "DEMO: tu primera hora"},
+    {"voz": "leo", "texto": "Te enseño el formato de guía breve.",
+     "afirmaciones": [{"texto": "Ejemplo de dato para la demo", "etiqueta": "OPINIÓN",
+                       "fuente": "https://www.rockstargames.com/newswire", "fecha": "2026-11-16"}]},
+    {"voz": "leo", "texto": "Primer paso de ejemplo, resaltado en pantalla.", "item": 0},
+    {"voz": "sofi", "texto": "Segundo paso de ejemplo, también resaltado.", "item": 1},
+    {"voz": "leo", "texto": "Tercer paso de ejemplo para terminar.", "item": 2},
+    {"voz": "sofi", "texto": "¿Qué harás tú en tu primera hora? Te leo."}
+  ],
+  "cierre": "¿Qué harás tú en tu primera hora?",
+  "titulos": {"tiktok": "Demo de guía breve", "shorts": "GTA 6: demo de guía breve"},
+  "descripcion": "Vídeo de demostración de la Fábrica (datos inventados).",
+  "hashtags": ["#GTA6", "#demo"],
+  "aviso_spoilers": false,
+  "fuente": "Demo",
+  "datos": {"pasos": ["Paso de ejemplo 1", "Paso de ejemplo 2", "Paso de ejemplo 3"]}
+}

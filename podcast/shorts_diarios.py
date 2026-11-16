@@ -20,7 +20,7 @@ import requests
 
 from radar.config import OUTPUT_DIR, ROOT, cfg
 from radar.db import connect, jdump, jload, kv_get, kv_set
-from radar.llm import extract_json, research_with_web
+from radar.llm import disponible, extract_json, research_with_web
 from radar.notify import send
 
 from . import publicar, render, script, tts, upload
@@ -112,6 +112,10 @@ def main():
     ap.add_argument("--video", help="URL de un vídeo de YouTube: se usa solo su título como pista del tema")
     ap.add_argument("--n", type=int, help="cuántos Shorts (por defecto: config.yaml)")
     args = ap.parse_args()
+    if not args.demo and not disponible():
+        print("ℹ IA desactivada (ia.modo: suscripcion): los Shorts automáticos no se generan. "
+              "Hazlos desde el Estudio (python -m estudio) con guiones de Claude Code.")
+        return
 
     conf = cfg()["podcast"].get("shorts_diarios", {})
     tema = args.tema

@@ -10,8 +10,24 @@ from .config import cfg, env
 _client = None
 
 
+class ModoSuscripcion(RuntimeError):
+    """ia.modo = suscripcion: la app no llama a la IA (0 €). Los guiones los escribe Claude Code en la sesión."""
+
+
+def modo() -> str:
+    return (cfg().get("ia", {}).get("modo") or "suscripcion").lower()
+
+
+def disponible() -> bool:
+    """¿Se puede llamar a la API? Solo con ia.modo=api y clave puesta."""
+    return modo() == "api" and bool(env("ANTHROPIC_API_KEY"))
+
+
 def client():
     global _client
+    if modo() != "api":
+        raise ModoSuscripcion("La IA de pago está desactivada (ia.modo: suscripcion en config.yaml). "
+                              "Pide los guiones a Claude Code en la sesión, o cambia ia.modo a 'api' si quieres pagar la API.")
     if _client is None:
         import anthropic
 

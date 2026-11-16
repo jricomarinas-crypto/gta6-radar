@@ -124,6 +124,9 @@ radar:
 #  IA (Claude)
 # ------------------------------------------------------------
 ia:
+  # suscripcion (0 €): la app no llama a ninguna IA; los guiones los escribe Claude Code en la sesión con Javier.
+  # api: usa la API de Anthropic (de pago, con límite de gasto). Solo si Javier lo pide.
+  modo: "suscripcion"
   modelo_rapido: "claude-haiku-5-5"     # clasificación masiva (barato)
   modelo_principal: "claude-sonnet-5-5" # guiones, briefing, chat
   busquedas_web_por_episodio: 6         # verificación de datos con búsqueda web

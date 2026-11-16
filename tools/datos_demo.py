@@ -8,10 +8,11 @@ import random
 import sys
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import quote_plus
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from radar import dashboard, scoring, trends  # noqa: E402
+from radar import dashboard, scoring, trends, vigilancia  # noqa: E402
 from radar.config import DATA_DIR  # noqa: E402
 from radar.db import connect, iso, jdump, kv_set, now  # noqa: E402
 
@@ -61,7 +62,7 @@ def main():
                    sentiment,risk_level,novelty,summary,key_claims,verification,classified_at,first_seen_at,last_scraped_at)
                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (vid, "youtube", f"demo{n}", f"youtube:DEMO{ci}", title + (f" #{rep + 1}" if rep else ""), "",
-                 "https://www.youtube.com/", iso(pub), random.choice([45, 58, 480, 720, 1260]), int(rep % 3 == 0), lang,
+                 "https://www.youtube.com/results?search_query=" + quote_plus(title), iso(pub), random.choice([45, 58, 480, 720, 1260]), int(rep % 3 == 0), lang,
                  random.choice(["búsqueda", "tendencias MX", "canal vigilado"]), views, int(views * random.uniform(.02, .06)),
                  int(views * random.uniform(.002, .01)), vel, 1, ctype, jdump(topics), jdump(["Rockstar Games"]),
                  "neutral", risk, nov, "Resumen de demostración del vídeo.", jdump(["Afirmación de ejemplo"]), ver,
@@ -81,9 +82,17 @@ def main():
         {"pregunta": "¿A qué hora se desbloquea en mi país?", "frecuencia": "alta"},
         {"pregunta": "¿Tendrá modo 60 FPS en PS5 Pro?", "frecuencia": "alta"},
         {"pregunta": "¿Cuándo sale en PC?", "frecuencia": "media"}], "opiniones": ["Opinión de ejemplo"]}))
+    kv_set(con, "ideas_hoy", jdump({"fecha": t.strftime("%Y-%m-%d"), "ideas": [
+        {"titulo": "GTA 6: a qué hora se desbloquea en cada país de Latinoamérica", "formato": "short",
+         "tema": "lanzamiento", "por_que": "Ejemplo: el tema con más demanda y casi sin vídeos en español."},
+        {"titulo": "GTA 6 en PS5 Pro: ¿vale la pena para 60 FPS?", "formato": "episodio",
+         "tema": "rendimiento_fps", "por_que": "Ejemplo: los análisis rinden x3 sobre lo normal esta semana."},
+        {"titulo": "Precio de GTA 6 en pesos: qué edición conviene", "formato": "short",
+         "tema": "precio_ediciones", "por_que": "Ejemplo: pregunta repetida en comentarios y poca oferta en español."}]}))
     con.execute("INSERT INTO runs(kind,started_at,finished_at,stats) VALUES('radar',?,?,'{}')", (iso(), iso()))
     con.commit()
     scoring.score_videos(con)
+    vigilancia.actualizar_lista(con)
     trends.detect_alerts(con)
     out = dashboard.build(con, demo=True)
     print("Panel de demostración:", out)

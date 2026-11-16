@@ -83,6 +83,7 @@ jobs:
             output/*/miniatura.jpg
             output/*/guion.json
             output/*/dossier.md
+            output/*/publicar/**
             output/*/editor.md
             output/*/descripcion.txt
           retention-days: 7

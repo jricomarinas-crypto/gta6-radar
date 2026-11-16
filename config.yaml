@@ -44,6 +44,13 @@ radar:
   canales_oficiales:
     - "@RockstarGames"
   creadores_prioritarios: []
+
+  # Radar masivo: vigila por RSS (gratis, sin cuota) los canales que más publican y rinden con GTA 6.
+  # La lista se rellena sola con los creadores que va encontrando el Radar.
+  vigilancia:
+    activar: true
+    max_canales: 200
+    min_videos_14d: 2                 # vídeos de GTA 6 en 14 días para entrar en la lista
   #  - "@TuCreadorFavorito"
 
   # Medios por RSS (gratis). Google News filtra ya por "GTA 6".
@@ -62,6 +69,27 @@ radar:
       idioma: "en"
     - nombre: "Eurogamer"
       url: "https://www.eurogamer.net/feed"
+      idioma: "en"
+    - nombre: "Vandal"
+      url: "https://vandal.elespanol.com/xml.cgi"
+      idioma: "es"
+    - nombre: "3DJuegos"
+      url: "https://www.3djuegos.com/feedburner.xml"
+      idioma: "es"
+    - nombre: "IGN España"
+      url: "https://es.ign.com/feed.xml"
+      idioma: "es"
+    - nombre: "VidaExtra"
+      url: "https://www.vidaextra.com/feedburner.xml"
+      idioma: "es"
+    - nombre: "Push Square"
+      url: "https://www.pushsquare.com/feeds/latest"
+      idioma: "en"
+    - nombre: "Pure Xbox"
+      url: "https://www.purexbox.com/feeds/latest"
+      idioma: "en"
+    - nombre: "Insider Gaming"
+      url: "https://insider-gaming.com/feed/"
       idioma: "en"
 
   # Palabras que marcan que algo es de GTA 6 (para filtrar medios y vídeos)
@@ -107,6 +135,12 @@ podcast:
   duracion_minutos: 9                 # duración objetivo del episodio largo
   shorts_por_episodio: 3              # cortes verticales sacados del episodio
   shorts_duracion_max: 75             # segundos
+
+  # Shorts sueltos (además del episodio): Leo y Sofi sobre lo más caliente del Radar.
+  # Se lanzan 2 veces al día desde .github/workflows/shorts.yml y suben en privado.
+  shorts_diarios:
+    activar: true
+    por_ejecucion: 2
 
   # Formatos que se van alternando para que el canal no parezca una plantilla
   formatos:

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from . import oportunidades
 from .briefing import snapshot
 from .config import ROOT, cfg
 from .db import jload
@@ -22,6 +23,7 @@ def build(con, out_dir: Path | None = None, demo: bool = False) -> Path:
          "shorts": jload(r["shorts"])}
         for r in con.execute("SELECT * FROM episodes ORDER BY date DESC LIMIT 10")
     ]
+    data["oportunidades"] = oportunidades.calcular(con)
     data["channel"] = cfg()["canal"]
     data["release_date"] = "2026-11-19"
     data["demo"] = demo

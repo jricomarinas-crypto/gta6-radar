@@ -29,8 +29,19 @@ def radar_context(con) -> dict:
         "alertas": [{k: a[k] for k in ("type", "severity", "title", "message", "url")} for a in s["alerts"][:15]],
         "noticias": [{k: n[k] for k in ("source", "title", "url", "summary", "verification", "official")} for n in s["news"][:20]],
         "comunidad": s["community_questions"],
+        # temas con mucha demanda y poca oferta en español + ideas del día (radar/oportunidades.py)
+        "oportunidades": {k: v for k, v in _oportunidades(con).items() if k in ("temas", "formatos", "ideas")},
         "briefing": (b["markdown"] if b else "")[:6000],
     }
+
+
+def _oportunidades(con) -> dict:
+    from radar import oportunidades
+    try:
+        return oportunidades.calcular(con)
+    except Exception as e:  # noqa: BLE001 — si falla, el guion sigue sin este bloque
+        print(f"  [oportunidades] no disponibles ({e.__class__.__name__})")
+        return {}
 
 
 def history(con, n=14) -> list[dict]:
@@ -112,7 +123,7 @@ Reglas de oro:
 FUENTES CITADAS: {jdump(sources[:25])}
 
 Escribe el episodio. Duración objetivo: ~{words} palabras habladas en total (unos {p['duracion_minutos']} minutos).
-Entre 5 y 8 segmentos. Marca {n_shorts} segmentos que funcionen solos como Short vertical: deben tener
+Entre 5 y 8 segmentos. Marca EXACTAMENTE {n_shorts} segmentos distintos (ni la intro ni el cierre) que funcionen solos como Short vertical: deben tener
 120-180 palabras y empezar con una frase gancho que se entienda sin contexto.
 
 Devuelve SOLO este JSON:
@@ -148,8 +159,22 @@ def validate(ep: dict) -> dict:
         s.setdefault("tarjeta", {})
     ep["segmentos"] = segs
     ep["shorts"] = [x for x in ep.get("shorts", []) if isinstance(x.get("segmento"), int) and 0 <= x["segmento"] < len(segs)]
+    _completar_shorts(ep)
     ep["titulo"] = (ep.get("titulo") or "GTA 6: lo último")[:100]
     return ep
+
+
+def _completar_shorts(ep: dict) -> None:
+    """Si la IA marcó menos Shorts de los pedidos, añade los segmentos con más texto que no se usan aún."""
+    n = int(cfg()["podcast"].get("shorts_por_episodio", 3))
+    segs = ep["segmentos"]
+    usados = {x["segmento"] for x in ep["shorts"]}
+    # la intro (0) y el cierre (último) no funcionan solos como Short
+    candidatos = [i for i in range(1, len(segs) - 1) if i not in usados]
+    candidatos.sort(key=lambda i: -sum(len(ln["texto"].split()) for ln in segs[i]["lineas"]))
+    for i in candidatos[: max(0, n - len(ep["shorts"]))]:
+        cap = segs[i].get("capitulo") or ep.get("titulo", "GTA 6")
+        ep["shorts"].append({"segmento": i, "titulo": f"GTA 6: {cap}"[:60], "gancho": cap})
 
 
 def flatten(ep: dict) -> list[dict]:

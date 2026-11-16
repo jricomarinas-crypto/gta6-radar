@@ -269,7 +269,7 @@ def frame_vertical(meta: dict, seg: dict, speaker: str, hook: str) -> Image.Imag
     hosts = {h["id"]: h for h in cfg()["podcast"]["presentadores"]}
     _host_block(img, hosts["A"], 330, 1150, 180, speaker == "A", name_size=32, show_live=False)
     _host_block(img, hosts["B"], 750, 1150, 180, speaker == "B", name_size=32, show_live=False)
-    d.text((W / 2, 1790), "Episodio completo en el canal  ▶", font=font(F_BOLD, 32), fill=(220, 220, 235, 230), anchor="mt")
+    d.text((W / 2, 1790), meta.get("pie") or "Episodio completo en el canal  ▶", font=font(F_BOLD, 32), fill=(220, 220, 235, 230), anchor="mt")
     return img.convert("RGB")
 
 

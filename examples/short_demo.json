@@ -1,0 +1,39 @@
+{
+  "shorts": [
+    {
+      "tema": "plataformas-lanzamiento",
+      "titulo": "GTA 6: ¿en qué consolas sale el 19 de noviembre?",
+      "gancho": "¿Dónde juego GTA 6?",
+      "tarjeta": {"titular": "PS5 y Xbox Series X|S", "detalle": "La versión de PC no tiene fecha anunciada",
+                  "estado": "CONFIRMADO", "fuente": "Rockstar Games"},
+      "lineas": [
+        {"habla": "B", "texto": "Faltan días para GTA 6 y la pregunta del millón es: ¿dónde lo voy a jugar?"},
+        {"habla": "A", "texto": "Lo confirmado por Rockstar: sale el 19 de noviembre en PS5 y en Xbox Series X y S."},
+        {"habla": "B", "texto": "¿Y los que jugamos en PC?"},
+        {"habla": "A", "texto": "De momento, nada oficial. Pasó lo mismo con GTA 5: primero consolas, PC después."},
+        {"habla": "B", "texto": "O sea, paciencia. Igual que en 2013."},
+        {"habla": "A", "texto": "Exacto. Y ojo con las webs que ya venden claves para PC: hoy no existen."},
+        {"habla": "B", "texto": "¿Tú en qué plataforma lo vas a jugar? Te leo en comentarios."}
+      ],
+      "fuentes": [{"titulo": "Rockstar Newswire", "url": "https://www.rockstargames.com/newswire"}]
+    },
+    {
+      "tema": "fps-consola",
+      "titulo": "GTA 6 a 30 FPS: lo que se sabe del rendimiento",
+      "gancho": "¿30 o 60 FPS?",
+      "tarjeta": {"titular": "30 FPS en consolas", "detalle": "El modo a 60 FPS todavía no está confirmado",
+                  "estado": "REPORTADO", "fuente": "Vandal / TweakTown"},
+      "lineas": [
+        {"habla": "B", "texto": "GTA 6 a 30 FPS. ¿Es un drama o no tanto?"},
+        {"habla": "A", "texto": "Varios medios reportan que hoy corre a 30 cuadros por segundo en consolas."},
+        {"habla": "A", "texto": "Un modo a 60 todavía no está confirmado. Eso es lo que se sabe, nada más."},
+        {"habla": "B", "texto": "¿Y la PS5 Pro no lo arregla?"},
+        {"habla": "A", "texto": "Los análisis técnicos dudan: el límite estaría en el procesador, no en la gráfica."},
+        {"habla": "B", "texto": "¿Tú prefieres más gráficos o más fluidez? Dímelo abajo."}
+      ],
+      "fuentes": [
+        {"titulo": "Vandal — GTA 6 funciona actualmente a 30 FPS en consolas", "url": "https://vandal.elespanol.com/noticia/2026240015/gta-6-funciona-actualmente-a-30-fps-en-consolas-y-rockstar-no-puede-confirmar-todavia-un-modo-a-60-fps/"}
+      ]
+    }
+  ]
+}

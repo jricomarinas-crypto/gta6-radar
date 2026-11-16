@@ -115,7 +115,16 @@ def connect(path=DB_PATH) -> sqlite3.Connection:
     con = sqlite3.connect(path)
     con.row_factory = sqlite3.Row
     con.executescript(SCHEMA)
+    _migrar(con)
     return con
+
+
+def _migrar(con) -> None:
+    """Columnas añadidas después de crear la base de datos (las bases antiguas no las tienen)."""
+    cols = {r["name"] for r in con.execute("PRAGMA table_info(creators)")}
+    if "is_watched" not in cols:  # canal vigilado por RSS (radar/vigilancia.py)
+        con.execute("ALTER TABLE creators ADD COLUMN is_watched INTEGER DEFAULT 0")
+        con.commit()
 
 
 def jdump(x) -> str:

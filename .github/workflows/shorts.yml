@@ -1,0 +1,72 @@
+name: Shorts diarios GTA 6
+
+on:
+  schedule:
+    - cron: "7 15 * * *"        # 15:07 UTC = 09:07 en México → listos para el mediodía
+    - cron: "7 23 * * *"        # 23:07 UTC = 17:07 en México → listos para la noche
+  workflow_dispatch:
+    inputs:
+      subir:
+        description: "¿Subir a YouTube (privado)?"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: datos-radar
+  cancel-in-progress: false
+
+jobs:
+  shorts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar FFmpeg y dependencias
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install -r requirements.txt
+
+      - name: Recuperar datos del Radar
+        run: bash tools/datos_git.sh traer
+
+      - name: Crear Shorts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.subir }}" = "false" ]; then
+            python -m podcast.shorts_diarios --sin-subir
+          else
+            python -m podcast.shorts_diarios
+          fi
+
+      - name: Guardar datos
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bash tools/datos_git.sh guardar
+
+      - name: Shorts para descargar (TikTok, revisión)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shorts-${{ github.run_number }}
+          path: |
+            output/*/shorts_*/publicar/**
+            output/*/shorts_*/guiones.json

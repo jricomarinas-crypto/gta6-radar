@@ -284,6 +284,12 @@ def run_ingestion(con) -> dict:
     stats["nuevos_busqueda"] = fetch_and_store(con, new_search, "búsqueda")
     stats["nuevos_canales"] = fetch_and_store(con, new_chan, "canal vigilado", force_ids=official_ids)
     stats["tendencias"] = len(trend_items)
+    # 2b) radar masivo: cientos de canales por RSS (gratis); solo pagamos las estadísticas de lo nuevo
+    from . import vigilancia  # aquí para evitar import circular (vigilancia usa is_gta6)
+    if vigilancia._conf().get("activar"):
+        stats["canales_vigilados"] = vigilancia.actualizar_lista(con)
+        feed_ids = vigilancia.leer_feeds(con) - set(new_search) - set(new_chan)
+        stats["nuevos_vigilancia"] = fetch_and_store(con, list(feed_ids), "canal vigilado")
     # 3) refrescar métricas de los vídeos recientes que ya seguimos
     recent = [r["external_id"] for r in con.execute(
         "SELECT external_id FROM videos WHERE platform='youtube' AND published_at >= ? AND last_scraped_at < ?",

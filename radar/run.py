@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import traceback
 
-from . import classify, dashboard, news, scoring, trends, youtube
+from . import classify, dashboard, news, oportunidades, scoring, trends, youtube
 from .briefing import community_questions, daily_briefing
 from .config import cfg, env
 from .db import connect, iso, jdump, prune
@@ -75,6 +75,7 @@ def main():
         stats.pop("briefing", None)
         if md and cfg()["avisos"].get("enviar_briefing_diario", True):
             send("📋 BRIEFING DIARIO — GTA VI RADAR\n\n" + md)
+        step("ideas para hoy", oportunidades.generar_ideas, stats, con)
 
     step("limpieza", prune, stats, con)
     step("panel", lambda: str(dashboard.build(con)), stats)

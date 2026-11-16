@@ -17,7 +17,7 @@ from radar.config import OUTPUT_DIR, ROOT, cfg
 from radar.db import connect, iso, jdump
 from radar.notify import send
 
-from . import editor, render, script, tts, upload
+from . import editor, publicar, render, script, tts, upload
 
 MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]
 
@@ -93,6 +93,14 @@ def main():
                   "los rumores se indican como tales.")
     desc = f"{ep.get('descripcion', '')}\n\nCapítulos:\n{render.chapters(ep, lines)}\n\nFuentes:\n{src_txt}\n\n{disclosure}\n\n#GTA6 #GTAVI #GrandTheftAutoVI"
     (work / "descripcion.txt").write_text(desc, encoding="utf-8")
+
+    # 4b) pack para publicar (YouTube + TikTok)
+    piezas = [publicar.pieza("episodio", final, ep["titulo"], desc, ep.get("etiquetas", []), thumb)]
+    for sh, path in shorts:
+        sdesc_pack = f"{sh.get('titulo', '')}\n\nEpisodio completo en el canal.\n\n{disclosure}\n\n#GTA6 #Shorts"
+        piezas.append(publicar.pieza("short", path, sh.get("titulo", ep["titulo"]), sdesc_pack,
+                                     ep.get("etiquetas", []), gancho=sh.get("gancho", "")))
+    publicar.crear_pack(work, piezas, disclosure)
 
     # 5) subida
     yt_id, shorts_ids = None, []

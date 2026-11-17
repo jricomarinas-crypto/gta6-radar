@@ -41,6 +41,9 @@
           <details class="tv" open><summary>Mostrar u ocultar</summary><div id="briefing" class="md"></div></details></div>
       </section>
 
+      <!-- INICIO › Continuar investigando -->
+      <section data-vista="inicio/continuar" hidden><div class="aviso-estudio card">Esta sección guarda tu trabajo privado y funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). La web pública no guarda nada tuyo.</div><div class="requiere-estudio" id="continuar"></div></section>
+
       <!-- INICIO › Alertas -->
       <section data-vista="inicio/alertas" hidden>
         <div class="card"><h2>Alertas <span class="count" id="acount"></span></h2><div id="alerts"></div></div>
@@ -91,8 +94,18 @@
         </div>
       </section>
 
-      <!-- INVESTIGAR › Noticias y fuentes (antes «Medios») -->
-      <section data-vista="investigar/noticias" hidden><div class="card"><div id="news"></div></div></section>
+      <!-- INVESTIGAR › Buscador -->
+      <section data-vista="investigar/buscador" hidden><div class="aviso-estudio card">Esta sección guarda tu trabajo privado y funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). La web pública no guarda nada tuyo.</div><div class="requiere-estudio" id="buscador"></div></section>
+
+      <!-- INVESTIGAR › Noticias y fuentes (antes «Medios»): en el Estudio, con leído/guardado/notas -->
+      <section data-vista="investigar/noticias" hidden>
+        <div class="card solo-publico"><div id="news"></div></div>
+        <div class="requiere-estudio" id="noticias-estudio"></div>
+      </section>
+
+      <!-- INVESTIGAR › Mis investigaciones y Biblioteca -->
+      <section data-vista="investigar/investigaciones" hidden><div class="aviso-estudio card">Esta sección guarda tu trabajo privado y funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). La web pública no guarda nada tuyo.</div><div class="requiere-estudio" id="investigaciones"></div></section>
+      <section data-vista="investigar/biblioteca" hidden><div class="aviso-estudio card">Esta sección guarda tu trabajo privado y funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). La web pública no guarda nada tuyo.</div><div class="requiere-estudio" id="biblioteca"></div></section>
 
       <!-- INVESTIGAR › Temas y tendencias (antes «Oportunidades») -->
       <section data-vista="investigar/temas" hidden><div class="card"><div id="oportunidades" class="op"></div></div></section>

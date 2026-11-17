@@ -1,10 +1,10 @@
 // ===== Navegación lateral, rutas (#/grupo/seccion), estado de los datos y vistas de Sistema =====
 // Las secciones aún no construidas se muestran como «pronto» (no son enlaces): ningún control aparenta funcionar.
 const MENU = [
-  {id: 'inicio', ico: '⌂', t: 'Inicio', items: [['hoy', 'Hoy'], ['alertas', 'Alertas'], ['continuar', 'Continuar investigando', '1B']]},
-  {id: 'investigar', ico: '⌕', t: 'Investigar', items: [['buscador', 'Buscador', '1B'], ['noticias', 'Noticias y fuentes'],
+  {id: 'inicio', ico: '⌂', t: 'Inicio', items: [['hoy', 'Hoy'], ['alertas', 'Alertas'], ['continuar', 'Continuar investigando']]},
+  {id: 'investigar', ico: '⌕', t: 'Investigar', items: [['buscador', 'Buscador'], ['noticias', 'Noticias y fuentes'],
     ['videos', 'Vídeos'], ['temas', 'Temas y tendencias'], ['rumores', 'Rumores y verificación', '2'], ['creadores', 'Creadores y canales'],
-    ['cronologia', 'Cronología', '2'], ['investigaciones', 'Mis investigaciones', '1B'], ['biblioteca', 'Biblioteca de referencias', '1B']]},
+    ['cronologia', 'Cronología', '2'], ['investigaciones', 'Mis investigaciones'], ['biblioteca', 'Biblioteca de referencias']]},
   {id: 'canal', ico: '▤', t: 'Mi canal', items: [['estadisticas', 'Estadísticas', '2'], ['rinde', 'Lo que más rinde', '2'],
     ['mis-videos', 'Mis vídeos', '2'], ['colaboradores', 'Colaboradores', '2']]},
   {id: 'crear', ico: '✚', t: 'Crear', items: [['ideas', 'Fábrica de ideas'], ['guiones', 'Guiones y dossiers', '2'],
@@ -21,6 +21,11 @@ function rutaValida(r) {
   return item && !item[2] && document.querySelector(`[data-vista="${g}/${s}"]`) ? `${g}/${s}` : null;
 }
 function rutaActual() { return rutaValida(location.hash.replace(/^#\/?/, '')) || RUTA_INICIAL; }
+// subruta: una investigación concreta (#/investigar/investigaciones/<id>)
+function subRuta() {
+  const p = location.hash.replace(/^#\/?/, '').split('/');
+  return p[0] === 'investigar' && p[1] === 'investigaciones' && /^[0-9a-f]{6}$/.test(p[2] || '') ? p[2] : null;
+}
 
 function construirMenu() {
   const abiertos = guardado.leer('nav.abiertos', ['inicio', 'investigar', 'crear']);
@@ -76,15 +81,17 @@ document.addEventListener('keydown', e => {
 });
 
 function mostrarVista() {
-  const ruta = rutaActual();
-  if (location.hash !== '#/' + ruta && location.hash) history.replaceState(null, '', '#/' + ruta);
+  const ruta = rutaActual(), sub = subRuta();
+  window.PC_SUB = sub;
+  const completa = '#/' + ruta + (sub ? '/' + sub : '');
+  if (location.hash !== completa && location.hash) history.replaceState(null, '', completa);
   document.querySelectorAll('[data-vista]').forEach(s => s.hidden = s.dataset.vista !== ruta);
   document.querySelectorAll('#nav-menu a[data-ruta]').forEach(a => a.toggleAttribute('aria-current', a.dataset.ruta === ruta));
   document.querySelectorAll('#nav-menu a[aria-current]').forEach(a => a.setAttribute('aria-current', 'page'));
   const [g, s] = ruta.split('/');
   const grupo = MENU.find(x => x.id === g), item = grupo.items.find(i => i[0] === s);
   if ($('#grupo-' + g).hidden) abrirGrupo(g, true);
-  $('#migas').replaceChildren(grupo.t, ' › ', item[1], el('b', {text: item[1]}));
+  $('#migas').replaceChildren(grupo.t, ' › ', el('b', {text: item[1]}));
   document.title = `${item[1]} · GTA VI Radar`;
   window.dispatchEvent(new CustomEvent('vista', {detail: ruta}));
 }
@@ -137,6 +144,7 @@ function iniciarNavegacion() {
   mostrarVista();
 }
 
+Investigar.iniciar();
 iniciarNavegacion();
 arrancarPanel();
 Hoy.iniciar();

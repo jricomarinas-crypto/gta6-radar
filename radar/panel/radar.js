@@ -107,7 +107,7 @@ function renderVideos(vids) {
         el('div', {class: 'track'}, el('div', {class: 'fill', style: `width:${Math.max(0, Math.min(100, x || 0))}%`})),
         el('span', {text: x == null ? '—' : Math.round(x)})])),
       (v.claims || []).length ? el('div', {class: 'am', style: 'margin-top:6px'}, 'Afirma: ' + v.claims.join(' · ')) : null);
-    return el('article', {class: 'vid'},
+    return el('article', {class: 'vid', 'data-id': v.id, 'data-url': url || ''},
       url ? el('a', {href: url, target: '_blank', rel: 'noopener'}, th ? el('img', {class: 'thumb', src: th, alt: '', loading: 'lazy'}) : el('div', {class: 'thumb'})) : el('div', {class: 'thumb'}),
       el('div', {},
         el('div', {class: 'vt'}, url ? el('a', {href: url, target: '_blank', rel: 'noopener', text: v.title}) : v.title),

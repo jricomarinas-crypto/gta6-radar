@@ -44,10 +44,29 @@
 - Limitación: abierto como archivo (vista previa `data:`) el navegador bloquea la memoria de preferencias; el panel
   funciona igual con los valores por defecto.
 
+### Centro de investigación — fase 1B HECHA Y PROBADA (17-nov)
+- Solo en el Estudio (privado, `data/estudio.db`; tablas referencias, investigaciones, inv_refs, notas). En la web
+  pública cada sección muestra el aviso «funciona en el Estudio de tu Mac» y no hay controles que guarden nada.
+- **Buscador** (`estudio/busqueda.py`): busca en lo YA recopilado (noticias, vídeos, creadores, briefings y tus
+  guardados, notas e investigaciones), sin tildes, con filtros (tipo, periodo, fuente, idioma, tema, verificación),
+  chips para quitarlos y coincidencias marcadas. Índice FTS5 en `data/busqueda.db` (se regenera solo; borrarlo no
+  pierde nada). NO consulta internet: los botones «Google ↗ / YouTube ↗» abren otra pestaña y lo dicen.
+- **Noticias y fuentes**: Últimas / Sin leer / Guardadas, por fuente y tema; marcar leída, guardar, nota, añadir a
+  investigación. Se distingue extracto del medio y resumen generado.
+- **Vídeos**: cada vídeo del explorador tiene Guardar, Nota y Añadir a investigación.
+- **Biblioteca**: filtros, nota y etiquetas, archivar, eliminar (con confirmación y aviso de en cuántas investigaciones
+  está), enlaces manuales. Se guarda una copia de lo que viste: si el Radar borra el original, la referencia sigue.
+- **Mis investigaciones**: crear, estado, Resumen (qué sé / qué falta / conclusión), Fuentes (qué aporta, quitar sin
+  borrar de la biblioteca), Notas (apunte, pregunta, idea, enfoque). Afirmaciones, Cronología y Dossier: fase 2.
+- **Inicio › Continuar investigando**: investigaciones activas y lo guardado hace poco.
+- Probado: `tests/test_investigacion.py` (4) + 17 anteriores = 21 en verde; navegador (Estudio aislado) en escritorio y
+  móvil: buscar, guardar, crear investigación desde un resultado, leída/sin leer, acciones en 28/28 vídeos, resumen,
+  notas, continuar. Corregido de paso: la miga de pan repetía la sección.
+- Limitación: los avisos usan las ventanas del navegador (prompt/confirm); quedan bien pero son sencillas.
+
 ### Pendiente del rediseño / investigación
-- 1B (aprobada en propuesta, sin empezar): Buscador local (FTS5), Noticias y fuentes con leído/guardado/nota,
-  explorador de vídeos, Biblioteca, Mis investigaciones (privado, `data/estudio.db`).
-- Fase 2 y 3 según la propuesta del 17-nov.
+- Fase 2 (afirmaciones y verificación, cronología, dossier, paso a Fábrica, estadísticas) y fase 3 según la
+  propuesta del 17-nov.
 
 ### Documentos
 - `README.md` sustituido por la versión de Javier, ampliada con Estudio, modo suscripción, fondo real y tu voz.

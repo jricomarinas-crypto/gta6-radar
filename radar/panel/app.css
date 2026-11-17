@@ -98,3 +98,28 @@ a.res:hover{border-color:var(--faint);text-decoration:none}
 .kv{display:grid;grid-template-columns:minmax(140px,max-content) 1fr;gap:6px 14px;font-size:13px}
 .kv dt{color:var(--muted)} .kv dd{margin:0}
 @media (max-width:640px){.graf-hoy{margin-left:0;text-align:left;width:100%}}
+
+/* ===== Investigar (fase 1B) ===== */
+body.con-estudio .solo-publico{display:none}
+.inv-form{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:10px}
+.inv-form input[type=search],.inv-form input[type=text],.inv-form input[type=url],.inv-form select,.inv-form textarea{
+  background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:7px 10px;font:inherit;font-size:13px}
+.inv-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.inv-form .ancho{flex:1;min-width:220px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:6px 0}
+.chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent-soft);border:1px solid rgba(249,115,22,.4);border-radius:999px;padding:2px 4px 2px 10px;font-size:12px}
+.chip button{background:none;border:0;color:var(--text);cursor:pointer;font:inherit;padding:0 6px}
+.res-item{border-top:1px solid var(--border);padding:10px 0}
+.res-item:first-child{border-top:0}
+.res-item .vt mark{background:none;color:var(--accent);font-weight:800}
+.res-item .ext mark{background:rgba(249,115,22,.22);color:var(--text);border-radius:3px}
+.acciones{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.acciones .btn{padding:4px 9px;font-size:12px}
+.marca{font-size:11px;color:var(--faint)}
+.inv-tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin:10px 0}
+.inv-tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--muted);padding:7px 10px;font:inherit;font-weight:600;cursor:pointer}
+.inv-tabs button[aria-selected=true]{color:var(--text);border-color:var(--accent)}
+.inv-tabs .pronto{color:var(--faint);padding:7px 10px;font-size:13px}
+textarea.campo{width:100%;min-height:72px;background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;font:inherit;font-size:13px}
+.guardado-ok{color:#86EFAC;font-size:12px}
+.err-campo{color:#FCA5A5;font-size:12px}

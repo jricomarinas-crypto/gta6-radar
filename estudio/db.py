@@ -56,6 +56,33 @@ CREATE TABLE IF NOT EXISTS eventos (
     fecha TEXT NOT NULL, origen TEXT NOT NULL DEFAULT 'registro'
 );
 CREATE INDEX IF NOT EXISTS idx_eventos_fecha ON eventos(fecha);
+-- Investigación (fase 1B). Todo privado: solo en tu Mac.
+-- referencias: una fila por recurso (noticia, vídeo, creador, enlace). Guarda una copia de lo que viste
+--              (por si el Radar borra el original) y su estado: leída, guardada en la biblioteca, archivada, nota.
+CREATE TABLE IF NOT EXISTS referencias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo TEXT NOT NULL, clave TEXT NOT NULL UNIQUE,
+    titulo TEXT, url TEXT, fuente TEXT, publicado_en TEXT, detectado_en TEXT, extracto TEXT,
+    datos TEXT, etiquetas TEXT DEFAULT '[]', nota TEXT,
+    guardada INTEGER DEFAULT 0, leida INTEGER DEFAULT 0, archivada INTEGER DEFAULT 0,
+    creada_en TEXT, actualizada_en TEXT
+);
+CREATE TABLE IF NOT EXISTS investigaciones (
+    id TEXT PRIMARY KEY, titulo TEXT NOT NULL, pregunta TEXT, descripcion TEXT, temas TEXT DEFAULT '[]',
+    estado TEXT NOT NULL DEFAULT 'abierta',     -- abierta | recopilando | contrastando | lista | archivada
+    que_se TEXT, que_falta TEXT, conclusion TEXT,
+    creada_en TEXT, actividad_en TEXT
+);
+-- una referencia puede estar en varias investigaciones sin duplicarse
+CREATE TABLE IF NOT EXISTS inv_refs (
+    inv_id TEXT NOT NULL, ref_id INTEGER NOT NULL, aporte TEXT, consultada_en TEXT, anadida_en TEXT,
+    PRIMARY KEY (inv_id, ref_id)
+);
+CREATE TABLE IF NOT EXISTS notas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, inv_id TEXT NOT NULL,
+    tipo TEXT NOT NULL DEFAULT 'apunte',        -- apunte | pregunta | idea | enfoque
+    texto TEXT NOT NULL, creada_en TEXT, actualizada_en TEXT
+);
 CREATE TABLE IF NOT EXISTS tomas (
     trabajo_id TEXT NOT NULL, escena INTEGER NOT NULL,
     texto_hash TEXT NOT NULL,           -- huella del texto grabado: si la escena cambia, la toma deja de valer

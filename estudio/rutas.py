@@ -21,6 +21,12 @@ def db_path() -> Path:
     return (r / "estudio.db") if r else DATA_DIR / "estudio.db"
 
 
+def busqueda_db() -> Path:
+    """Índice del buscador. Se regenera desde los datos: borrarlo no pierde nada."""
+    r = _raiz_pruebas()
+    return (r / "busqueda.db") if r else DATA_DIR / "busqueda.db"
+
+
 def ideas_dir() -> Path:
     r = _raiz_pruebas()
     return (r / "ideas") if r else ROOT / "estudio" / "ideas"

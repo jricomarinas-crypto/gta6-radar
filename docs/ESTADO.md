@@ -86,9 +86,26 @@
   móvil sin scroll horizontal: crear afirmación, bloqueo de Confirmado sin evidencia, evidencia, confirmar,
   cronología, dossier, crear idea, pieza en En producción con su origen.
 
+### Mi canal — fase 2B HECHA Y PROBADA (17-nov)
+- Una sola fuente de verdad (`estudio/canal.py`, privado): `mis_videos` + `mediciones` (siempre ACUMULADAS desde la
+  publicación; vacío ≠ 0; sin duplicados por vídeo y minuto; una bajada pide confirmación) + `medicion_log` (altas,
+  correcciones y borrados). Al marcar una pieza como subida, el vídeo entra solo en Mis vídeos.
+- Fórmulas en la cabecera de `estudio/canal.py`: vistas del día = diferencia entre mediciones, al día de la posterior
+  («acumula N días», sin repartir); vistas a 48 h solo con medición entre 40 y 56 h (sin interpolar); índice a 48 h
+  = ÷ mediana de las 20 piezas anteriores de la plataforma (si no, «historial insuficiente»); retención de grupo solo
+  con duraciones a ±25 %; ingresos/costes no se muestran (no hay registro). Días en Europe/Madrid.
+- **Mi canal › Estadísticas**: formulario rápido (TikTok/Shorts/YouTube, todo opcional, unidades, errores junto al
+  campo), comparación 7/28 días con cobertura, gráfica diaria, desgloses por plataforma y formato, tabla ordenable
+  con Corregir y Borrar. **Lo que más rinde** (tema, formato, serie, colaboración; «pocos datos» < 5; sin ganador),
+  **Mis vídeos** (48 h e índice con su fórmula), **Colaboradores** (destacados y emergentes con criterio visible,
+  posibles, guardados con estado y nota; no envía nada), **Sistema › Fuentes vigiladas** (pública).
+- **Hoy › Mi canal** usa tus mediciones reales en el Estudio (la web pública sigue con la demo etiquetada).
+  En producción: «Registrar métricas» junto al vídeo subido. Investigar › Creadores: «Guardar» como colaborador.
+- Probado: `tests/test_canal.py` (9) + 25 anteriores = 34 en verde; navegador (Estudio aislado) en escritorio y móvil
+  sin scroll horizontal.
+- Limitación: TikTok y YouTube se registran a mano. Conectar YouTube Analytics es una integración aparte (pide OK).
+
 ### Pendiente del rediseño / investigación
-- **Fase 2B** (Mi canal): estadísticas, registro manual de TikTok, lo que más rinde, mis vídeos, colaboradores, fuentes
-  vigiladas.
 - Fase 3: asistente de investigación, búsquedas externas (con tu OK), Revisión, Calendario, atajos.
 
 ### Documentos

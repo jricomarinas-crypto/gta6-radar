@@ -217,7 +217,7 @@ function renderStatic() {
   const cr = DATA.creators || [];
   $('#creators').replaceChildren(cr.length ? el('table', {class: 'tbl'},
     el('tr', {}, ...['Creador', 'Suscriptores', 'Vídeos GTA 6', 'Vistas', 'Vistas/h máx.', 'Mejor score'].map((h, i) => el('th', {class: i ? 'num' : '', text: h}))),
-    ...cr.map(c => el('tr', {}, el('td', {}, c.name || '—', c.is_official ? el('span', {class: 'b s-info', style: 'margin-left:6px', text: 'Oficial'}) : null),
+    ...cr.map(c => el('tr', {'data-id': c.id, 'data-oficial': c.is_official ? '1' : null}, el('td', {}, c.name || '—', c.is_official ? el('span', {class: 'b s-info', style: 'margin-left:6px', text: 'Oficial'}) : null),
       el('td', {class: 'num', text: fmt(c.subscribers)}), el('td', {class: 'num', text: c.n_videos}), el('td', {class: 'num', text: fmt(c.views)}),
       el('td', {class: 'num', text: fmt(c.max_velocity)}), el('td', {class: 'num', text: c.best_score == null ? '—' : Math.round(c.best_score)}))))
     : el('div', {class: 'empty', text: 'Aún no hay creadores.'}));
@@ -447,7 +447,8 @@ function piezaCard(p) {
     p.plataformas.forEach(pl => { const e = ex[pl]; if (!e) return;
       c.append(el('div', {class: 'am'}, `${FAB.plataformas[pl]}: `,
         el('span', {class: e.disponible ? 'ok' : 'bad', text: e.disponible ? (p.legado ? '✓ en la carpeta del Mac' : '✓ Disponible en el Mac (hash comprobado)') : '✗ ' + e.motivo}),
-        e.subida_en ? el('span', {}, ' · subido ', safeUrl(e.url) ? el('a', {href: safeUrl(e.url), target: '_blank', rel: 'noopener', text: 'ver'}) : '') :
+        e.subida_en ? el('span', {}, ' · subido ', safeUrl(e.url) ? el('a', {href: safeUrl(e.url), target: '_blank', rel: 'noopener', text: 'ver'}) : '',
+          ' · ', el('a', {href: '#/canal/estadisticas', text: 'Registrar métricas', onclick: () => { window.PC_MEDIR = {plataforma: pl, url: e.url}; }})) :
           (e.disponible && !p.legado ? boton('Marcar subido…', async () => { const u = prompt(`URL del vídeo publicado en ${FAB.plataformas[pl]}`);
             if (u) await api(`/api/piezas/${p.id}/subido`, {plataforma: pl, url: u}); }) : null))); });
     if (Object.values(ex).some(e => e.disponible)) acciones.append(boton('Abrir en el Finder', () => api('/api/abrir-carpeta', {pieza: p.id})));

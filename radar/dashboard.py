@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from . import diario, oportunidades
+from . import diario, fuentes, oportunidades
 from .briefing import snapshot
 from .config import ROOT, cfg
 from .db import jload, kv_get
@@ -18,7 +18,7 @@ AQUI = Path(__file__).parent
 TEMPLATE = AQUI / "dashboard_template.html"
 PANEL = AQUI / "panel"
 CSS = ["base.css", "app.css"]                              # orden de carga
-JS = ["radar.js", "util.js", "graficas.js", "hoy.js", "investigar.js", "nav.js"]       # radar.js define DATA y utilidades; nav.js arranca
+JS = ["radar.js", "util.js", "graficas.js", "hoy.js", "investigar.js", "canal.js", "nav.js"]       # radar.js define DATA y utilidades; nav.js arranca
 
 
 def _leer(nombres: list[str]) -> str:
@@ -55,6 +55,7 @@ def build(con, out_dir: Path | None = None, demo: bool = False) -> Path:
         "canal_demo": jload(kv_get(con, "demo_canal"), None) if demo else None,
         "produccion_demo": jload(kv_get(con, "demo_produccion"), None) if demo else None,
     }
+    data["fuentes"] = fuentes.resumen(con)
     data["datos_antiguos_horas"] = cfg().get("panel", {}).get("datos_antiguos_horas", 3)
     out = out_dir / "index.html"
     out.write_text(html(data), encoding="utf-8")

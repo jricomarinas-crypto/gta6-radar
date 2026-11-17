@@ -112,17 +112,22 @@ const Hoy = (() => {
 
   // ---------- 2. Mi canal
   function canal() {
-    const demo = (DATA.series || {}).canal_demo;
-    const caja = bloque('canal', 'Mi canal · vistas diarias', 'Vistas nuevas de cada día por plataforma (diferencia entre mediciones; nunca la suma de acumulados). Los Shorts van aparte y no se cuentan dentro de YouTube largo.', demo ? 'DEMO' : null);
-    if (!demo) {
+    // En el Estudio: tus mediciones reales (privadas). En la web pública: la demo, etiquetada. Nunca se mezclan.
+    const demo = window.PC_ESTUDIO ? null : (DATA.series || {}).canal_demo;
+    const real = window.PC_ESTUDIO ? st.canal : null;
+    const datos = real || demo;
+    const caja = bloque('canal', 'Mi canal · vistas diarias', 'Vistas nuevas de cada día por plataforma (diferencia entre mediciones; nunca la suma de acumulados). Si entre dos mediciones pasan varios días, todo cuenta el día de la segunda («acumula N días»).', real ? 'REAL' : demo ? 'DEMO' : null);
+    if (!datos) {
       caja.append(vacio('Sin datos de tus vídeos todavía.', 'mediciones de vistas de TikTok, YouTube Shorts y YouTube largo.',
-        'no hay registro manual de métricas ni conexión con YouTube Analytics.',
-        'el registro manual de TikTok llega en la fase 2 (Mi canal › Estadísticas). YouTube Analytics queda pendiente de aprobar.'));
+        window.PC_ESTUDIO ? 'aún no has registrado ninguna medición.' : 'tus métricas son privadas y solo se ven en el Estudio de tu Mac.',
+        window.PC_ESTUDIO ? 'regístralas en Mi canal › Estadísticas (TikTok a mano). YouTube Analytics queda pendiente de aprobar.' : 'abre el Estudio (python -m estudio).'));
       return caja;
     }
+    if (real) { const notas = real.filter(d => d.notas && d.notas.length && fechasPeriodo().includes(d.fecha));
+      if (notas.length) caja.append(el('div', {class: 'am', text: 'Ojo: ' + notas.map(d => `${d.fecha}: ${d.notas.join('; ')}`).join(' · ')})); }
     const fechas = fechasPeriodo();
     const series = [{id: 'tiktok', nombre: 'TikTok', color: '#22D3EE'}, {id: 'shorts', nombre: 'YouTube Shorts', color: '#F472B6'},
-      {id: 'largo', nombre: 'YouTube largo', color: '#FACC15', discontinua: true}].map(s => ({...s, valores: alinear(fechas, demo, s.id)}));
+      {id: 'largo', nombre: 'YouTube largo', color: '#FACC15', discontinua: true}].map(s => ({...s, valores: alinear(fechas, datos, s.id)}));
     caja.append(leyenda('canal', series, pintar));
     grafica('canal', caja, series, nf0, 'Mi canal: vistas diarias por plataforma');
     return caja;
@@ -187,6 +192,7 @@ const Hoy = (() => {
   async function cargarEstudio() {
     try { st.produccion = await api('/api/series?dias=90'); st.piezas = (await api('/api/piezas')).piezas; }
     catch (e) { st.produccion = null; }
+    try { st.canal = (await api('/api/canal/serie')).serie; } catch (e) { st.canal = null; }
     pintar();
   }
 

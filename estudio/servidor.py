@@ -18,7 +18,7 @@ from fabrica import cola
 from radar import dashboard
 from radar.config import DATA_DIR, cfg
 
-from . import api_investigar, db, flujo, ideas, rutas
+from . import api_canal, api_investigar, db, flujo, ideas, rutas
 
 SITE = DATA_DIR / "estudio_site"
 RE_ID = re.compile(r"^[0-9a-f]{6}$")
@@ -133,7 +133,7 @@ class Handler(BaseHTTPRequestHandler):
                 gi = flujo.leer_guion(db.trabajo(con, m.group(1)))
                 st["guion"]["contenido"] = gi.get("guion")
                 return self._json(st)
-            res = api_investigar.get(path, self.path.partition("?")[2])
+            res = api_investigar.get(path, self.path.partition("?")[2]) or api_canal.get(path, self.path.partition("?")[2])
             if res:
                 return self._json(res[1], res[0])
             m = re.match(r"^/media/toma/([0-9a-f]{6})/(\d{1,2})\.wav$", path)
@@ -168,7 +168,7 @@ class Handler(BaseHTTPRequestHandler):
             except flujo.Bloqueado as e:
                 return self._json({"error": str(e)}, 409)
         body = self._body()
-        res = api_investigar.post(path, body)
+        res = api_investigar.post(path, body) or api_canal.post(path, body)
         if res:
             return self._json(res[1], res[0])
         try:

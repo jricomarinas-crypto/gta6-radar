@@ -127,6 +127,28 @@ CREATE TABLE IF NOT EXISTS dossiers (
     contenido TEXT NOT NULL, markdown TEXT NOT NULL, creado_en TEXT,
     UNIQUE (inv_id, n)
 );
+-- Fase 2B: tus vídeos publicados, sus mediciones (siempre ACUMULADAS desde la publicación) y colaboradores
+CREATE TABLE IF NOT EXISTS mis_videos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, plataforma TEXT NOT NULL,   -- tiktok | shorts | youtube
+    url TEXT, titulo TEXT, publicado_en TEXT, pieza_id TEXT, formato TEXT, variante TEXT, temas TEXT DEFAULT '[]',
+    serie TEXT, colaboracion TEXT, duracion_s REAL, origen TEXT NOT NULL DEFAULT 'manual', creado_en TEXT,
+    UNIQUE (plataforma, url)
+);
+CREATE TABLE IF NOT EXISTS mediciones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, video_id INTEGER NOT NULL, medido_en TEXT NOT NULL,
+    vistas INTEGER, tiempo_medio_s REAL, pct_completo REAL, compartidos INTEGER, seguidores_ganados INTEGER,
+    likes INTEGER, comentarios INTEGER, nota TEXT, origen TEXT NOT NULL DEFAULT 'manual', creado_en TEXT, actualizado_en TEXT,
+    UNIQUE (video_id, medido_en)      -- medido_en se guarda al minuto: no hay dos mediciones del mismo vídeo en el mismo minuto
+);
+CREATE TABLE IF NOT EXISTS medicion_log (    -- altas, correcciones y borrados: solo se añade
+    id INTEGER PRIMARY KEY AUTOINCREMENT, medicion_id INTEGER, video_id INTEGER, accion TEXT NOT NULL,
+    antes TEXT, despues TEXT, cuando TEXT
+);
+CREATE TABLE IF NOT EXISTS colaboradores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, creador_radar TEXT UNIQUE, nombre TEXT NOT NULL, plataforma TEXT, url TEXT,
+    idioma TEXT, temas TEXT DEFAULT '[]', estado TEXT NOT NULL DEFAULT 'por_revisar', nota TEXT,
+    creado_en TEXT, actualizado_en TEXT
+);
 """
 
 COLUMNAS_TRABAJOS = {

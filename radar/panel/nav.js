@@ -5,11 +5,11 @@ const MENU = [
   {id: 'investigar', ico: '⌕', t: 'Investigar', items: [['buscador', 'Buscador'], ['noticias', 'Noticias y fuentes'],
     ['videos', 'Vídeos'], ['temas', 'Temas y tendencias'], ['rumores', 'Rumores y verificación'], ['creadores', 'Creadores y canales'],
     ['cronologia', 'Cronología'], ['investigaciones', 'Mis investigaciones'], ['biblioteca', 'Biblioteca de referencias']]},
-  {id: 'canal', ico: '▤', t: 'Mi canal', items: [['estadisticas', 'Estadísticas', '2'], ['rinde', 'Lo que más rinde', '2'],
-    ['mis-videos', 'Mis vídeos', '2'], ['colaboradores', 'Colaboradores', '2']]},
+  {id: 'canal', ico: '▤', t: 'Mi canal', items: [['estadisticas', 'Estadísticas'], ['rinde', 'Lo que más rinde'],
+    ['mis-videos', 'Mis vídeos'], ['colaboradores', 'Colaboradores']]},
   {id: 'crear', ico: '✚', t: 'Crear', items: [['ideas', 'Fábrica de ideas'], ['guiones', 'Guiones y dossiers'],
     ['produccion', 'En producción'], ['revision', 'Revisión', '3'], ['calendario', 'Calendario', '3'], ['episodios', 'Episodios y archivos']]},
-  {id: 'sistema', ico: '⚙', t: 'Sistema', items: [['fuentes', 'Fuentes vigiladas', '2'], ['ejecuciones', 'Automatizaciones y ejecuciones'],
+  {id: 'sistema', ico: '⚙', t: 'Sistema', items: [['fuentes', 'Fuentes vigiladas'], ['ejecuciones', 'Automatizaciones y ejecuciones'],
     ['configuracion', 'Configuración']]},
 ];
 const RUTA_INICIAL = 'inicio/hoy';
@@ -145,6 +145,7 @@ function iniciarNavegacion() {
 }
 
 Investigar.iniciar();
+Canal.iniciar();
 iniciarNavegacion();
 arrancarPanel();
 Hoy.iniciar();

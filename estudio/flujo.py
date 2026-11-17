@@ -250,6 +250,8 @@ def marcar_subido(con, tid: str, plataforma: str, url: str) -> dict:
         exp.marcar_subido(con, tid, plataforma, url[:300])
     except ExportacionFallida as e:
         raise Bloqueado(str(e)) from e
+    from . import canal  # el vídeo queda en Mi canal › Mis vídeos para registrar sus métricas (no se duplica)
+    canal.video_desde_pieza(con, tid, plataforma, url)
     t = db.trabajo(con, tid)
     if all(st["exportacion"].get(p, {}).get("subida_en") or p == plataforma for p in t["plataformas"]):
         con.execute("UPDATE trabajos SET estado_publicacion='publicado' WHERE id=?", (tid,))

@@ -9,90 +9,130 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="logo"><div class="radar" aria-hidden="true"></div>GTA VI RADAR</div>
-    <div class="sub" id="chan"></div>
-    <div class="spacer"></div>
-    <span class="pill" id="countdown"></span>
-    <span class="pill" id="updated"></span>
-  </header>
-  <div id="demo" class="demo" hidden>Datos de demostración (inventados) para ver el panel. Con tus claves, el Radar se llena con datos reales cada hora.</div>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<div class="app">
+  <aside id="nav" class="nav" aria-label="Navegación principal">
+    <div class="nav-top">
+      <div class="logo"><div class="radar" aria-hidden="true"></div><span class="nav-texto">GTA VI RADAR</span></div>
+      <button class="nav-boton" id="nav-contraer" type="button" aria-label="Contraer el menú" aria-expanded="true">«</button>
+      <button class="nav-boton solo-movil" id="nav-cerrar" type="button" aria-label="Cerrar el menú">✕</button>
+    </div>
+    <nav id="nav-menu" aria-label="Secciones"></nav>
+  </aside>
+  <div class="nav-velo" id="nav-velo" hidden></div>
 
-  <div class="filters" role="group" aria-label="Filtros">
-    <label>Periodo
-      <span class="seg" id="f-period">
-        <button data-v="6">6 h</button><button data-v="24" aria-pressed="true">24 h</button><button data-v="48">48 h</button>
-      </span>
-    </label>
-    <label>Idioma
-      <select id="f-lang"><option value="">Todos</option><option value="es">Español</option><option value="en">Inglés</option><option value="other">Otros</option></select>
-    </label>
-    <label>Formato
-      <select id="f-fmt"><option value="">Todos</option><option value="long">Vídeos largos</option><option value="short">Shorts</option></select>
-    </label>
-    <label>Tema <select id="f-topic"><option value="">Todos</option></select></label>
-    <label>Riesgo
-      <select id="f-risk"><option value="">Cualquiera</option><option value="low">Solo bajo</option><option value="medium">Medio o más</option><option value="high">Alto o más</option></select>
-    </label>
-    <label>Score mínimo <input type="range" id="f-score" min="0" max="90" step="5" value="0" aria-describedby="f-score-v"></label>
-    <span class="sub" id="f-score-v">0</span>
-    <label style="flex:1;min-width:180px">Buscar <input type="search" id="f-q" placeholder="título, canal, entidad…"></label>
-  </div>
+  <div class="main">
+    <header>
+      <button class="nav-boton solo-movil" id="nav-abrir" type="button" aria-label="Abrir el menú" aria-controls="nav" aria-expanded="false">☰</button>
+      <div class="sub" id="chan"></div>
+      <div class="spacer"></div>
+      <span class="pill" id="estado-datos-pill"></span>
+      <span class="pill" id="countdown"></span>
+      <span class="pill" id="updated"></span>
+    </header>
+    <div id="demo" class="demo" hidden>Datos de demostración (inventados) para ver el panel. Con tus claves, el Radar se llena con datos reales cada hora.</div>
+    <div class="migas" id="migas" aria-live="polite"></div>
 
-  <section class="kpis" id="kpis" aria-label="Indicadores"></section>
+    <main id="contenido" tabindex="-1">
+      <!-- INICIO › Hoy -->
+      <section data-vista="inicio/hoy">
+        <div id="hoy"></div>
+        <div class="card"><h2>Briefing del día</h2>
+          <details class="tv" open><summary>Mostrar u ocultar</summary><div id="briefing" class="md"></div></details></div>
+      </section>
 
-  <div class="grid">
-    <main>
-      <div class="card">
-        <div class="tabs" role="tablist">
-          <button role="tab" aria-selected="false" data-tab="fabrica" hidden>Estudio</button>
-          <button role="tab" aria-selected="true" data-tab="radar">Radar de contenido</button>
-          <button role="tab" aria-selected="false" data-tab="oportunidades">Oportunidades</button>
-          <button role="tab" aria-selected="false" data-tab="creators">Creadores</button>
-          <button role="tab" aria-selected="false" data-tab="news">Medios</button>
-          <button role="tab" aria-selected="false" data-tab="briefing">Briefing</button>
-          <button role="tab" aria-selected="false" data-tab="episodes">Episodios</button>
+      <!-- INICIO › Alertas -->
+      <section data-vista="inicio/alertas" hidden>
+        <div class="card"><h2>Alertas <span class="count" id="acount"></span></h2><div id="alerts"></div></div>
+        <div class="card"><h2>Lo que pregunta la comunidad</h2><div id="community"></div></div>
+      </section>
+
+      <!-- INVESTIGAR › Vídeos (antes «Radar de contenido») -->
+      <section data-vista="investigar/videos" hidden>
+        <div class="filters" role="group" aria-label="Filtros de vídeos">
+          <label>Periodo
+            <span class="seg" id="f-period">
+              <button data-v="6">6 h</button><button data-v="24" aria-pressed="true">24 h</button><button data-v="48">48 h</button>
+            </span>
+          </label>
+          <label>Idioma
+            <select id="f-lang"><option value="">Todos</option><option value="es">Español</option><option value="en">Inglés</option><option value="other">Otros</option></select>
+          </label>
+          <label>Formato
+            <select id="f-fmt"><option value="">Todos</option><option value="long">Vídeos largos</option><option value="short">Shorts</option></select>
+          </label>
+          <label>Tema <select id="f-topic"><option value="">Todos</option></select></label>
+          <label>Riesgo
+            <select id="f-risk"><option value="">Cualquiera</option><option value="low">Solo bajo</option><option value="medium">Medio o más</option><option value="high">Alto o más</option></select>
+          </label>
+          <label>Score mínimo <input type="range" id="f-score" min="0" max="90" step="5" value="0" aria-describedby="f-score-v"></label>
+          <span class="sub" id="f-score-v">0</span>
+          <label style="flex:1;min-width:180px">Buscar <input type="search" id="f-q" placeholder="título, canal, entidad…"></label>
         </div>
-        <div data-panel="radar">
-          <div class="toolbar"><span id="vcount"></span>
-            <span style="flex:1"></span>
-            <button id="csv" style="background:var(--surface2);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;cursor:pointer;margin-right:10px">Exportar CSV</button>
-            <label>Ordenar <select id="sort">
-              <option value="score">Score global</option><option value="momentum">Momentum</option>
-              <option value="velocity">Vistas/hora</option><option value="views">Vistas</option><option value="recent">Más recientes</option>
-            </select></label>
+        <section class="kpis" id="kpis" aria-label="Indicadores"></section>
+        <div class="grid">
+          <div class="card">
+            <div class="toolbar"><span id="vcount"></span>
+              <span style="flex:1"></span>
+              <button id="csv" class="btn" type="button" style="margin-right:10px">Exportar CSV</button>
+              <label>Ordenar <select id="sort">
+                <option value="score">Score global</option><option value="momentum">Momentum</option>
+                <option value="velocity">Vistas/hora</option><option value="views">Vistas</option><option value="recent">Más recientes</option>
+              </select></label>
+            </div>
+            <div id="videos"></div>
           </div>
-          <div id="videos"></div>
+          <aside>
+            <div class="card"><h2>Temas · vídeos en el periodo</h2><div id="topics"></div>
+              <details class="tv"><summary>Ver tabla</summary><div id="topics-table"></div></details></div>
+            <div class="card"><h2>Cobertura por hora · vídeos publicados</h2><div id="hourly"></div>
+              <details class="tv"><summary>Ver tabla</summary><div id="hourly-table"></div></details></div>
+          </aside>
         </div>
-        <div data-panel="fabrica" hidden>
-          <div class="toolbar"><span id="fab-info"></span><span style="flex:1"></span>
-            <button class="btn" id="fab-mano">Nueva idea a mano</button>
-            <button class="btn" id="fab-carpeta">Abrir la carpeta del Mac</button></div>
+      </section>
+
+      <!-- INVESTIGAR › Noticias y fuentes (antes «Medios») -->
+      <section data-vista="investigar/noticias" hidden><div class="card"><div id="news"></div></div></section>
+
+      <!-- INVESTIGAR › Temas y tendencias (antes «Oportunidades») -->
+      <section data-vista="investigar/temas" hidden><div class="card"><div id="oportunidades" class="op"></div></div></section>
+
+      <!-- INVESTIGAR › Creadores y canales -->
+      <section data-vista="investigar/creadores" hidden>
+        <div class="card"><h2>Creadores con vídeos de GTA 6 (96 h)</h2><div class="tblwrap"><div id="creators"></div></div></div>
+        <div class="card"><h2>Creadores emergentes</h2>
+          <p class="am">Criterio: pocos suscriptores (≤ umbral de config.yaml) y vistas en vídeos de GTA 6 al menos 3 veces sus suscriptores.</p>
+          <div id="emerging"></div></div>
+      </section>
+
+      <!-- CREAR › Fábrica de ideas y En producción (Estudio; solo en tu Mac) -->
+      <section data-vista="crear/ideas" hidden>
+        <div class="aviso-estudio card">Esta sección funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). En la web pública no se guardan ideas ni piezas.</div>
+        <div class="requiere-estudio card"><div class="toolbar"><span id="fab-info"></span></div>
+          <div class="op"><h3>Ideas para hoy</h3><div id="fab-ideas" class="fab-ideas"></div></div></div>
+      </section>
+      <section data-vista="crear/produccion" hidden>
+        <div class="aviso-estudio card">Esta sección funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). Aquí no hay piezas porque la web pública no guarda nada privado.</div>
+        <div class="requiere-estudio card">
+          <div class="toolbar"><span style="flex:1"></span>
+            <button class="btn" id="fab-mano" type="button">Nueva idea a mano</button>
+            <button class="btn" id="fab-carpeta" type="button">Abrir la carpeta del Mac</button></div>
           <form id="fab-mano-form" class="fab-idea" hidden style="margin-bottom:10px">
             <label class="am">Título de la idea <input id="mano-titulo" type="search" required minlength="6" style="width:100%"></label>
             <label class="am">Por qué ahora (opcional) <input id="mano-porque" type="search" style="width:100%"></label>
             <div class="row"><button class="btn pri" type="submit">Enviar al Estudio</button></div>
           </form>
-          <div class="op"><h3>Piezas en el Estudio</h3><div id="fab-piezas" aria-live="polite"></div>
-            <h3>Ideas para hoy</h3><div id="fab-ideas" class="fab-ideas"></div></div>
+          <div class="op"><h3>Piezas en el Estudio</h3><div id="fab-piezas" aria-live="polite"></div></div>
         </div>
-        <div data-panel="oportunidades" hidden><div id="oportunidades" class="op"></div></div>
-        <div data-panel="creators" hidden><div id="creators"></div></div>
-        <div data-panel="news" hidden><div id="news"></div></div>
-        <div data-panel="briefing" hidden><div id="briefing" class="md"></div></div>
-        <div data-panel="episodes" hidden><div id="episodes"></div></div>
-      </div>
+      </section>
+
+      <!-- CREAR › Episodios y archivos -->
+      <section data-vista="crear/episodios" hidden><div class="card"><div id="episodes"></div></div></section>
+
+      <!-- SISTEMA -->
+      <section data-vista="sistema/ejecuciones" hidden><div class="card"><div id="ejecuciones"></div></div></section>
+      <section data-vista="sistema/configuracion" hidden><div class="card"><div id="estado-datos"></div></div></section>
     </main>
-    <aside>
-      <div class="card"><h2>Alertas <span class="count" id="acount"></span></h2><div id="alerts"></div></div>
-      <div class="card"><h2>Temas · vídeos en el periodo</h2><div id="topics"></div>
-        <details class="tv"><summary>Ver tabla</summary><div id="topics-table"></div></details></div>
-      <div class="card"><h2>Cobertura por hora · vídeos publicados</h2><div id="hourly"></div>
-        <details class="tv"><summary>Ver tabla</summary><div id="hourly-table"></div></details></div>
-      <div class="card"><h2>Creadores emergentes</h2><div id="emerging"></div></div>
-      <div class="card"><h2>Lo que pregunta la comunidad</h2><div id="community"></div></div>
-    </aside>
   </div>
 </div>
 <div id="tip" role="tooltip"></div>

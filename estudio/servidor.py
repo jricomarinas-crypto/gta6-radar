@@ -103,6 +103,26 @@ class Handler(BaseHTTPRequestHandler):
                 lista, demo = _ideas()
                 return self._json({"ideas": lista, "demo": demo, "variantes": ideas.VARIANTES, "formatos": ideas.FORMATOS,
                                    "plataformas": ideas.PLATAFORMAS, "carpeta": str(rutas.carpeta_base())})
+            if path == "/api/series":
+                from . import series
+                return self._json(series.produccion(db.connect(), 90))
+            if path == "/api/series/dia":
+                from urllib.parse import parse_qs, urlparse
+                from . import series
+                fecha = (parse_qs(urlparse(self.path).query).get("fecha") or [""])[0]
+                if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha):
+                    return self._json({"error": "Fecha no válida"}, 400)
+                return self._json({"fecha": fecha, "eventos": series.eventos_del_dia(db.connect(), fecha)})
+            if path == "/api/estado-datos":
+                from radar.config import env
+                from radar.llm import modo
+                return self._json({"conexiones": [
+                    {"nombre": "YouTube (lectura)", "ok": bool(env("YOUTUBE_API_KEY")), "como": "YOUTUBE_API_KEY en .env o GitHub Secrets"},
+                    {"nombre": "Pexels (vídeo de fondo)", "ok": bool(env("PEXELS_API_KEY")), "como": "PEXELS_API_KEY en .env"},
+                    {"nombre": "IA de pago (Anthropic)", "ok": modo() == "api" and bool(env("ANTHROPIC_API_KEY")),
+                     "como": f"desactivada a propósito (ia.modo: {modo()})"},
+                    {"nombre": "Subida a YouTube (OAuth)", "ok": bool(env("YT_REFRESH_TOKEN")), "como": "tools/get_youtube_token.py"},
+                ]})
             if path == "/api/piezas":
                 con = db.connect()
                 return self._json({"piezas": [flujo.estado(con, t["id"]) for t in db.trabajos(con)]})

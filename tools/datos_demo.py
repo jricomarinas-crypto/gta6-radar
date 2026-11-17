@@ -36,6 +36,37 @@ VIDEOS = [
 ]
 
 
+def series_demo(con) -> None:
+    """Series de 90 días para las gráficas de Hoy (DEMO, reproducibles). Incluyen a propósito los casos difíciles:
+    un día a cero, un día sin datos, métricas que empiezan más tarde y una plataforma sin datos al principio."""
+    from radar import diario
+    rng = random.Random(7)
+    h = diario.hoy()
+    dia = lambda i: (h - timedelta(days=i)).isoformat()  # noqa: E731
+    con.executescript(diario.SCHEMA)
+    for i in range(89, -1, -1):
+        if i == 5:
+            continue  # día sin ninguna ejecución del Radar → «sin datos», no cero
+        crece = 1 + (89 - i) / 30
+        pub = 0 if i == 9 else int(rng.uniform(18, 40) * crece)
+        det = 0 if i == 9 else int(pub * rng.uniform(0.8, 1.2))
+        mvh = round(rng.uniform(4000, 22000) * crece) if i <= 20 else None  # el máximo solo se guarda desde hace 20 días
+        con.execute("INSERT OR REPLACE INTO radar_diario(fecha,publicados,detectados,max_vistas_hora,origen,actualizado_en) "
+                    "VALUES(?,?,?,?,'demo',?)", (dia(i), pub, det, mvh, iso()))
+    canal, prod = [], []
+    for i in range(89, -1, -1):
+        canal.append({"fecha": dia(i),
+                      "tiktok": None if i > 60 or i == 3 else int(rng.uniform(800, 6000) * (1 + (60 - i) / 25)),
+                      "shorts": None if i > 45 else (0 if i == 12 else int(rng.uniform(300, 2500) * (1 + (45 - i) / 30))),
+                      "largo": None if i > 20 else int(rng.uniform(100, 900))})
+        prod.append({"fecha": dia(i), **({"fabricados": None, "aprobados": None, "publicados": None} if i > 25 else
+                                          {"fabricados": rng.choice([0, 1, 2, 3]), "aprobados": rng.choice([0, 0, 1, 2]),
+                                           "publicados": rng.choice([0, 0, 1, 2])})})
+    kv_set(con, "demo_canal", jdump(canal))
+    kv_set(con, "demo_produccion", jdump(prod))
+    con.commit()
+
+
 def main():
     path = DATA_DIR / "demo.db"
     path.unlink(missing_ok=True)
@@ -93,6 +124,7 @@ def main():
     con.commit()
     scoring.score_videos(con)
     vigilancia.actualizar_lista(con)
+    series_demo(con)
     trends.detect_alerts(con)
     out = dashboard.build(con, demo=True)
     print("Panel de demostración:", out)

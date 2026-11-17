@@ -514,8 +514,10 @@ async function fabPiezas(forzar) {
 }
 async function initFabrica() {
   if (!/^https?:$/.test(location.protocol)) return;
-  try { await fabIdeas(); } catch { return; }  // sin Estudio (GitHub Pages o archivo): la pestaña no aparece
-  const tab = document.querySelector('[data-tab=fabrica]'); tab.hidden = false; showTab('fabrica');
+  try { await fabIdeas(); } catch { return; }  // sin Estudio (GitHub Pages o archivo): sus secciones muestran el aviso
+  window.PC_ESTUDIO = true;
+  document.body.classList.add('con-estudio');
+  window.dispatchEvent(new Event('estudio-listo'));
   $('#fab-carpeta').addEventListener('click', () => api('/api/abrir-carpeta', {}));
   $('#fab-mano').addEventListener('click', () => { $('#fab-mano-form').hidden = !$('#fab-mano-form').hidden; });
   $('#fab-mano-form').addEventListener('submit', async e => { e.preventDefault();
@@ -525,4 +527,4 @@ async function initFabrica() {
   setInterval(() => fabPiezas(false).catch(() => {}), 3000);
 }
 
-renderStatic(); renderOportunidades(); render(); initFabrica();
+function arrancarPanel() { renderStatic(); renderOportunidades(); render(); initFabrica(); }

@@ -18,7 +18,7 @@ AQUI = Path(__file__).parent
 TEMPLATE = AQUI / "dashboard_template.html"
 PANEL = AQUI / "panel"
 CSS = ["base.css", "app.css"]                              # orden de carga
-JS = ["radar.js", "graficas.js", "hoy.js", "nav.js"]       # radar.js define DATA y utilidades; nav.js arranca
+JS = ["radar.js", "util.js", "graficas.js", "hoy.js", "nav.js"]       # radar.js define DATA y utilidades; nav.js arranca
 
 
 def _leer(nombres: list[str]) -> str:

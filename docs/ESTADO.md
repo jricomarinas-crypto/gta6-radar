@@ -19,10 +19,35 @@
 - **No probado todavía:** descarga real de Pexels (falta la clave de Javier) y grabación real con micrófono (la hace Javier).
 - Limitación: con tu voz, los tiempos de los subtítulos son proporcionales dentro de cada toma (aproximados).
 
-### Rediseño del panel — fase 1 A MEDIAS
-- Hecho (`06100ae`): `radar/diario.py` (resumen diario del Radar, null ≠ 0) y eventos de producción en el Estudio
-  (`estudio/series.py`), migración v3 con eventos reconstruidos marcados.
-- Pendiente: dividir el panel en archivos, barra lateral, Hoy con 3 gráficas, demo de 90 días, verificación.
+### Rediseño del panel — fase 1A HECHA Y PROBADA (17-nov)
+- Panel dividido en `radar/panel/` (base.css, app.css, radar.js, util.js, graficas.js, hoy.js, nav.js);
+  `radar/dashboard.py` los une en un único `index.html` (sin compilación nueva; funciona sin internet y en Pages).
+  Comprobado: con los mismos datos, la división dio un HTML idéntico byte a byte antes de cambiar la navegación.
+- Barra lateral con el menú integrado (Inicio · Investigar · Mi canal · Crear · Sistema), rutas `#/grupo/seccion`
+  con atrás/adelante, grupos y barra contraída recordados (solo preferencias en el navegador), menú móvil con Esc,
+  velo y foco atrapado/restaurado. Secciones aún no construidas aparecen como «fase 1B/2/3», no son enlaces.
+- Correspondencia de lo anterior: Radar de contenido → Investigar › Vídeos; Medios → Noticias y fuentes;
+  Oportunidades → Temas y tendencias; Creadores → Creadores y canales; Briefing → tarjeta en Inicio › Hoy;
+  Alertas y comunidad → Inicio › Alertas; Estudio → Crear › Fábrica de ideas + En producción; Episodios → Crear ›
+  Episodios y archivos; nuevas: Sistema › Automatizaciones y ejecuciones, Sistema › Configuración (estado de datos y
+  conexiones sin mostrar valores).
+- Hoy: 3 gráficas SVG propias (7/30/90 días; tooltip; teclado ←/→/Inicio/Fin/Intro; toque abre detalle; detalle del
+  día conservando periodo, métrica y series; leyenda para ocultar series; hoy vs ayer con «Sin comparación» y sin
+  porcentajes cuando ayer es 0; huecos sombreados, nunca 0) + resumen operativo con enlaces.
+  - Radar: selector de métrica (publicados | detectados | máx. vistas/hora), nunca dos unidades en un eje.
+  - Mi canal: vacío explicado (no hay métricas reales); demo marcada en la base demo.
+  - Producción: REAL en el Estudio (eventos de `data/estudio.db`, con aviso de reconstruidos); en la web pública
+    se explica que es privada.
+- Probado: `tests/test_series.py` (4) + 13 anteriores = 17 en verde; navegador en escritorio y móvil (375 px,
+  sin scroll horizontal), consola sin errores, rutas, atrás/adelante, Esc, foco, leyendas, detalle, comparaciones
+  sin NaN/Infinity, todas las vistas antiguas con su contenido.
+- Limitación: abierto como archivo (vista previa `data:`) el navegador bloquea la memoria de preferencias; el panel
+  funciona igual con los valores por defecto.
+
+### Pendiente del rediseño / investigación
+- 1B (aprobada en propuesta, sin empezar): Buscador local (FTS5), Noticias y fuentes con leído/guardado/nota,
+  explorador de vídeos, Biblioteca, Mis investigaciones (privado, `data/estudio.db`).
+- Fase 2 y 3 según la propuesta del 17-nov.
 
 ### Documentos
 - `README.md` sustituido por la versión de Javier, ampliada con Estudio, modo suscripción, fondo real y tu voz.

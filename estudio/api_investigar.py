@@ -30,6 +30,12 @@ GET  /api/investigaciones/<id>/dossier          vista previa (sin guardar)
 POST /api/investigaciones/<id>/dossier          guarda una versión congelada
 GET  /api/dossiers?inv=                          GET /api/dossiers/<id>
 POST /api/dossiers/<id>/idea {variante, plataformas}   crea la pieza en el Estudio (etapa Idea; no aprueba nada)
+Fase 3:
+POST /api/externo/google-news {q, region}       búsqueda EXTERNA explícita (gratis; la consulta va a Google News)
+POST /api/referencias {tipo:"enlace", url, titulo, fuente?, publicado_en?, guardada?}   guardar un resultado externo
+GET  /api/seguimientos                           seguimientos activos con su número de novedades
+GET  /api/investigaciones/<id>/seguimiento       estado + novedades
+POST /api/investigaciones/<id>/seguimiento {consultas} | /dejar | /revisado
 Devuelve (código, datos) o None si la ruta no es suya.
 """
 from __future__ import annotations
@@ -43,6 +49,7 @@ from radar.trends import TOPIC_LABEL
 
 from . import busqueda, db, ideas
 from . import dossier as dos
+from . import externo, seguimiento as seg
 from . import verificacion as ver
 from . import investigacion as inv
 
@@ -56,7 +63,10 @@ def _q(query: str) -> dict:
 def _crear_ref(con, body: dict) -> dict:
     tipo = str(body.get("tipo", ""))
     if tipo == "enlace":
-        return inv.crear_ref(con, "enlace", url=body.get("url"), titulo=body.get("titulo"))
+        externo_ = body.get("externo")
+        return inv.crear_ref(con, "enlace", url=body.get("url"), titulo=body.get("titulo"), fuente=body.get("fuente"),
+                             publicado_en=body.get("publicado_en"),
+                             datos={"externo": str(externo_)[:40], "consultado_en": body.get("consultado_en")} if externo_ else None)
     with closing(ideas.radar_db()) as radar:
         return inv.crear_ref(con, tipo, origen=str(body.get("origen", "")), radar=radar)
 
@@ -132,6 +142,14 @@ def get(path: str, query: str):
             return 404, {"error": str(e)}
         return 200, {"contenido": d, "markdown": dos.markdown(d), "versiones": dos.lista(con, m.group(1)),
                      "variantes": {k: v[1] for k, v in ideas.VARIANTES.items()}, "plataformas": ideas.PLATAFORMAS}
+    if path == "/api/seguimientos":
+        with closing(ideas.radar_db()) as radar:
+            return 200, {"seguimientos": seg.todos(radar, con, ideas.es_demo(radar))}
+    m = re.fullmatch(r"/api/investigaciones/" + RE_INV + r"/seguimiento", path)
+    if m:
+        with closing(ideas.radar_db()) as radar:
+            return 200, {"seguimiento": seg.estado(con, m.group(1)),
+                         "novedades": seg.novedades(radar, con, m.group(1), ideas.es_demo(radar))}
     if path == "/api/dossiers":
         return 200, {"dossiers": dos.lista(con, q.get("inv", ""))}
     m = re.fullmatch(r"/api/dossiers/(\d+)", path)
@@ -160,6 +178,15 @@ def post(path: str, body: dict):
             return 200, inv.actualizar_ref(con, rid, **{k: body.get(k) for k in ("guardada", "leida", "archivada", "nota", "etiquetas")})
         if path == "/api/investigaciones":
             return 200, inv.crear_inv(con, body.get("titulo", ""), body.get("pregunta", ""), body.get("descripcion", ""))
+        if path == "/api/externo/google-news":
+            return 200, externo.google_news(body.get("q", ""), body.get("region", "latam"))
+        m = re.fullmatch(r"/api/investigaciones/" + RE_INV + r"/seguimiento(?:/(dejar|revisado))?", path)
+        if m:
+            if m.group(2) == "dejar":
+                return 200, seg.dejar(con, m.group(1))
+            if m.group(2) == "revisado":
+                return 200, seg.revisado(con, m.group(1))
+            return 200, seg.seguir(con, m.group(1), body.get("consultas", ""))
         if path == "/api/afirmaciones":
             return 200, ver.crear_afirm(con, body.get("texto", ""), body.get("inv_id") or None, body.get("quien_primero", ""),
                                         body.get("fecha_origen", ""), body.get("ref_origen") or None, body.get("nota", ""))

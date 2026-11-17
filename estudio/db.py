@@ -149,6 +149,10 @@ CREATE TABLE IF NOT EXISTS colaboradores (
     idioma TEXT, temas TEXT DEFAULT '[]', estado TEXT NOT NULL DEFAULT 'por_revisar', nota TEXT,
     creado_en TEXT, actualizado_en TEXT
 );
+-- Fase 3: seguimiento de investigaciones (novedades del Radar desde tu última revisión)
+CREATE TABLE IF NOT EXISTS seguimientos (
+    inv_id TEXT PRIMARY KEY, consultas TEXT NOT NULL, activo INTEGER DEFAULT 1, revisado_en TEXT, creado_en TEXT
+);
 """
 
 COLUMNAS_TRABAJOS = {
@@ -159,6 +163,7 @@ COLUMNAS_TRABAJOS = {
     "nn": "TEXT",
     "fondo": "TEXT",   # video | grafico
     "voz": "TEXT",     # propia | sintetica
+    "fecha_prevista": "TEXT",  # AAAA-MM-DD: tu planificación (Calendario). No publica nada.
 }
 COLUMNAS_VERSIONES = {
     "clave": "TEXT",     # huella de guion + fondo + voz + tomas: si cambia, hace falta un vídeo nuevo

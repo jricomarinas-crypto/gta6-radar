@@ -49,6 +49,8 @@ Estado honesto en `docs/ESTADO.md`: actualízalo al terminar cada sesión.
 2. Verifica cada dato con búsqueda web en fuentes primarias o medios fiables (nunca otros creadores); anota la fecha.
 3. Escribe el JSON con el esquema de la cabecera de `fabrica/guion.py` y valídalo con `--validar`.
 4. NO apruebes nada: idea, guion y vídeo los aprueba Javier en el Estudio; él pulsa Crear vídeo y Exportar.
+Asistente de investigación (0 €): `/investigar <id> [pregunta]` → `python -m estudio.asistente <id>` imprime la investigación
+numerada ([F1] fuentes, [A1] afirmaciones, [N1] notas); responde citando, sin buscar fuera salvo que Javier lo pida y sin modificar nada.
 El render necesita ffmpeg con libass (`ffmpeg-full`); el Estudio lo antepone en el PATH solo.
 
 

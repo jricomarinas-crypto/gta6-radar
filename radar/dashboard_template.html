@@ -152,12 +152,16 @@
       <!-- CREAR › Guiones y dossiers (fase 2A, privado) -->
       <section data-vista="crear/guiones" hidden><div class="aviso-estudio card">Esta sección guarda tu trabajo privado y funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). La web pública no guarda nada tuyo.</div><div class="requiere-estudio" id="dossiers"></div></section>
 
+      <!-- CREAR › Revisión y Calendario (fase 3, privado) -->
+      <section data-vista="crear/revision" hidden><div class="aviso-estudio card">Esta sección funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). La web pública no guarda ni muestra nada tuyo.</div><div class="requiere-estudio" id="revision"></div></section>
+      <section data-vista="crear/calendario" hidden><div class="aviso-estudio card">Esta sección funciona en el <b>Estudio de tu Mac</b> (<code>python -m estudio</code>). La web pública no guarda ni muestra nada tuyo.</div><div class="requiere-estudio" id="calendario"></div></section>
+
       <!-- CREAR › Episodios y archivos -->
       <section data-vista="crear/episodios" hidden><div class="card"><div id="episodes"></div></div></section>
 
       <!-- SISTEMA -->
       <section data-vista="sistema/fuentes" hidden><div class="card"><div id="fuentes"></div></div></section>
-      <section data-vista="sistema/ejecuciones" hidden><div class="card"><div id="ejecuciones"></div></div></section>
+      <section data-vista="sistema/ejecuciones" hidden><div class="card requiere-estudio" id="automatizaciones"></div><div class="card"><div id="ejecuciones"></div></div></section>
       <section data-vista="sistema/configuracion" hidden><div class="card"><div id="estado-datos"></div></div></section>
     </main>
   </div>

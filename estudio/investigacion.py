@@ -89,7 +89,8 @@ def _desde_radar(radar, tipo: str, origen: str) -> dict:
 
 
 def crear_ref(con, tipo: str, origen: str | None = None, radar=None, url: str | None = None,
-              titulo: str | None = None) -> dict:
+              titulo: str | None = None, fuente: str | None = None, publicado_en: str | None = None,
+              datos: dict | None = None) -> dict:
     """Crea (o devuelve si ya existe) una referencia. Para «enlace» hacen falta url y título."""
     if tipo not in TIPOS:
         raise NoValido("Tipo de referencia desconocido.")
@@ -97,7 +98,8 @@ def crear_ref(con, tipo: str, origen: str | None = None, radar=None, url: str | 
         u = _url_ok(url)
         t = _txt(titulo, MAX["titulo"]) or urlparse(u).netloc
         d = {"clave": "enlace:" + hashlib.sha1(u.encode()).hexdigest()[:16], "titulo": t, "url": u,
-             "fuente": urlparse(u).netloc, "publicado_en": None, "detectado_en": None, "extracto": "", "datos": {"manual": True}}
+             "fuente": _txt(fuente, 120) or urlparse(u).netloc, "publicado_en": _txt(publicado_en, 40) or None,
+             "detectado_en": None, "extracto": "", "datos": datos or {"manual": True}}
     else:
         if radar is None or not origen:
             raise NoValido("Falta el elemento del Radar.")

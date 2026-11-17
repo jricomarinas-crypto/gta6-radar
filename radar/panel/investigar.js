@@ -53,7 +53,8 @@ const Investigar = (() => {
         } catch (err) { alert(err.message); } finally { sel.disabled = false; }
       });
       caja.replaceChildren(...[url && safeUrl(url) ? el('a', {class: 'btn', href: safeUrl(url), target: '_blank', rel: 'noopener', text: 'Abrir original ↗'}) : null,
-        btnG, btnL, btnN, sel, e.en_investigaciones ? el('span', {class: 'marca', text: `en ${e.en_investigaciones} investigación(es)`}) : null].filter(Boolean));
+        btnG, btnL, btnN, sel, accion('Crear vídeo de esto', async () => crearVideoDeEsto({titulo: (caja.closest('article')?.querySelector('.vt')?.textContent || '').trim(), url, origen: 'Crear vídeo de esto · ' + tipo})),
+        e.en_investigaciones ? el('span', {class: 'marca', text: `en ${e.en_investigaciones} investigación(es)`}) : null].filter(Boolean));
       if (e.nota) caja.append(el('div', {class: 'am', style: 'flex-basis:100%', text: 'Tu nota: ' + e.nota}));
     };
     pintar(estado);
@@ -92,7 +93,7 @@ const Investigar = (() => {
       el('div', {class: 'chips'}, ...tipos.map(([, l]) => l)),
       el('div', {class: 'inv-form'}, dias, fuente, idioma, tema, verif),
       el('p', {class: 'am', text: 'Busca en las noticias, vídeos, creadores y briefings que ya ha recopilado el Radar y en tu trabajo guardado. No consulta internet en tiempo real.'}),
-      externa), el('div', {class: 'card'}, res));
+      externa), el('div', {class: 'card'}, res), bloqueGoogleNews(b.q));
     if (b.q) buscar(res, {fuente, tema}); else res.replaceChildren(vacio('Escribe algo y pulsa Buscar.'));
   }
   async function buscar(res, selects) {
@@ -228,17 +229,18 @@ const Investigar = (() => {
     const estado = el('select', {'aria-label': 'Estado'}, ...Object.entries(ESTADO_INV).map(([k, t]) => el('option', {value: k, text: t}))); estado.value = i.estado;
     estado.addEventListener('change', async () => { await api('/api/investigaciones/' + iid, {estado: estado.value}); });
     const pest = [['resumen', 'Resumen'], ['fuentes', `Fuentes (${i.fuentes.length})`], ['afirmaciones', `Afirmaciones (${i.n_afirmaciones})`],
-      ['notas', `Notas (${i.notas.length})`], ['cronologia', 'Cronología'], ['dossier', 'Dossier']];
+      ['notas', `Notas (${i.notas.length})`], ['cronologia', 'Cronología'], ['dossier', 'Dossier'], ['seguimiento', 'Seguimiento']];
     const tabs = el('div', {class: 'inv-tabs', role: 'tablist'}, ...pest.map(([k, t]) => { const b = el('button', {type: 'button', role: 'tab', 'aria-selected': st.pestana === k ? 'true' : 'false', text: t});
       b.addEventListener('click', () => { st.pestana = k; pintarDetalle(iid); }); return b; }));
-    const fn = {fuentes: pestanaFuentes, notas: pestanaNotas, afirmaciones: pestanaAfirmaciones, cronologia: pestanaCronologia, dossier: pestanaDossier}[st.pestana] || pestanaResumen;
+    const fn = {fuentes: pestanaFuentes, notas: pestanaNotas, afirmaciones: pestanaAfirmaciones, cronologia: pestanaCronologia, dossier: pestanaDossier,
+      seguimiento: pestanaSeguimiento}[st.pestana] || pestanaResumen;
     const cuerpo = el('div', {}, el('div', {class: 'am', role: 'status', text: 'Cargando…'}));
     Promise.resolve(fn(i)).then(n => cuerpo.replaceChildren(n)).catch(e => cuerpo.replaceChildren(el('div', {class: 'bad', text: e.message})));
     const piezas = (i.piezas || []).length ? el('div', {class: 'am'}, 'Piezas creadas desde aquí: ', ...i.piezas.flatMap((p, k) =>
       [k ? ', ' : '', el('a', {href: '#/crear/produccion', text: `${p.titulo || p.id} (encargo ${p.id})`})])) : null;
     caja.replaceChildren(el('div', {class: 'card'}, el('a', {href: '#/investigar/investigaciones', text: '← Mis investigaciones'}),
       el('h2', {style: 'margin-top:8px', text: i.titulo}), el('div', {class: 'inv-form'}, el('label', {}, 'Estado', estado),
-        el('span', {class: 'am', text: `creada ${fecha(i.creada_en)} · última actividad ${fecha(i.actividad_en)}`})), piezas, tabs, cuerpo));
+        el('span', {class: 'am', text: `creada ${fecha(i.creada_en)} · última actividad ${fecha(i.actividad_en)}`})), preguntarEnChat(i), piezas, tabs, cuerpo));
     $('#migas').querySelector('b').textContent = i.titulo;
   }
   function pestanaResumen(i) {
@@ -283,8 +285,13 @@ const Investigar = (() => {
   // ---------- Continuar investigando
   async function pintarContinuar() {
     const caja = $('#continuar');
-    const [invs, bib] = await Promise.all([cargarInvs(), api('/api/biblioteca').then(d => d.referencias)]);
-    caja.replaceChildren(el('div', {class: 'card'}, el('h2', {text: 'Investigaciones activas'}),
+    const [invs, bib, segs] = await Promise.all([cargarInvs(), api('/api/biblioteca').then(d => d.referencias), api('/api/seguimientos').then(d => d.seguimientos)]);
+    caja.replaceChildren(
+      segs.length ? el('div', {class: 'card'}, el('h2', {text: 'Seguimientos'}), ...segs.map(s => el('div', {class: 'res-item'},
+        el('div', {class: 'vt'}, el('a', {href: '#/investigar/investigaciones/' + s.inv_id, text: s.titulo, onclick: () => { st.pestana = 'seguimiento'; }}),
+          ' ', el('span', {class: 'b ' + (s.n_novedades ? 's-warn' : ''), text: s.n_novedades ? `${s.n_novedades} novedad(es)` : 'sin novedades'})),
+        el('div', {class: 'am', text: 'consultas: ' + s.consultas.join(' · ') + ' · revisado ' + fecha(s.revisado_en)})))) : el('span'),
+      el('div', {class: 'card'}, el('h2', {text: 'Investigaciones activas'}),
       ...(invs.length ? invs.slice(0, 6).map(i => el('div', {class: 'res-item'}, el('div', {class: 'vt'}, el('a', {href: '#/investigar/investigaciones/' + i.id, text: i.titulo})),
         el('div', {class: 'meta'}, el('span', {class: 'b s-info', text: ESTADO_INV[i.estado]}), el('span', {text: `${i.n_fuentes} fuente(s) · ${i.n_notas} nota(s) · ${fecha(i.actividad_en)}`}))))
         : [vacio('No hay investigaciones abiertas.'), el('a', {class: 'btn', href: '#/investigar/investigaciones', text: 'Crear una investigación'})])),
@@ -495,6 +502,93 @@ const Investigar = (() => {
         : [vacio('Aún no hay dossiers. Se preparan en la pestaña Dossier de una investigación.')])));
   }
 
+  // ===================== Fase 3: Google News, seguimiento, asistente en el chat y «Crear vídeo de esto» =====================
+  // Diálogo único para crear una pieza desde cualquier sitio. Va al Estudio en la etapa Idea: no aprueba ni publica nada.
+  async function crearVideoDeEsto({titulo = '', url = '', origen = 'Crear vídeo de esto'} = {}) {
+    if (!window.PC_ESTUDIO) return alert('Esto funciona en el Estudio de tu Mac (python -m estudio).');
+    if (!Object.keys(FAB.variantes || {}).length) { const d = await api('/api/ideas'); FAB.variantes = d.variantes; FAB.plataformas = d.plataformas; }
+    const dlg = el('dialog', {class: 'dialogo', 'aria-label': 'Crear vídeo de esto'});
+    const tit = el('input', {type: 'text', value: titulo.slice(0, 120), required: '', minlength: '6'});
+    const porque = el('input', {type: 'text', placeholder: 'por qué ahora (opcional)'});
+    const vari = el('select', {}, ...Object.entries(FAB.variantes).map(([k, [f, n]]) => el('option', {value: k, text: `${f} · ${n}`})));
+    const plats = Object.entries(FAB.plataformas).map(([k, t]) => { const c = el('input', {type: 'checkbox', value: k}); c.checked = true; return [c, el('label', {class: 'chk'}, c, t)]; });
+    const err = el('div', {class: 'err-campo', 'aria-live': 'polite'});
+    const form = el('form', {method: 'dialog'}, el('h2', {text: 'Crear vídeo de esto'}),
+      el('p', {class: 'am', text: 'Se crea una pieza en el Estudio (etapa Idea). No se aprueba ni se publica nada. La fuente va como señal: el guion verificará cada dato.'}),
+      url ? el('p', {class: 'am'}, 'Fuente: ', enlace(url, titulo || url)) : null,
+      el('label', {class: 'ancho'}, 'Título de la idea', tit), el('label', {class: 'ancho'}, 'Por qué ahora', porque),
+      el('label', {}, 'Formato', vari), el('div', {class: 'chips'}, ...plats.map(([, l]) => l)), err,
+      el('div', {class: 'acciones'}, el('button', {class: 'btn pri', type: 'submit', value: 'ok', text: 'Crear idea'}), el('button', {class: 'btn', type: 'button', text: 'Cancelar', onclick: () => dlg.close()})));
+    form.addEventListener('submit', async e => { e.preventDefault();
+      try { const p = await api('/api/enviar', {a_mano: true, titulo: tit.value, por_que: porque.value, variante: vari.value, origen,
+          plataformas: plats.filter(([c]) => c.checked).map(([c]) => c.value), fuentes: url ? [{titulo, url}] : []});
+        dlg.close(); alert(`Idea creada: pieza ${p.id} en Crear › En producción (etapa Idea).`); } catch (ex) { err.textContent = ex.message; } });
+    dlg.append(form); document.body.append(dlg); dlg.addEventListener('close', () => dlg.remove()); dlg.showModal(); tit.focus();
+  }
+
+  // ---------- Buscador: Google News (externo)
+  function bloqueGoogleNews(qInicial) {
+    const q = el('input', {type: 'search', value: qInicial || '', placeholder: 'qué buscar en Google News', 'aria-label': 'Buscar en Google News'});
+    const reg = el('select', {'aria-label': 'Región'}, ...[['latam', 'Latinoamérica'], ['es', 'España'], ['us', 'EE. UU.']].map(([v, t]) => el('option', {value: v, text: t})));
+    const res = el('div', {'aria-live': 'polite'});
+    const form = el('form', {class: 'inv-form', role: 'search'}, el('label', {class: 'ancho'}, 'Buscar fuera · Google News', q), el('label', {}, 'Región', reg),
+      el('button', {class: 'btn', type: 'submit', text: 'Buscar en Google News ↗'}));
+    form.addEventListener('submit', async e => { e.preventDefault(); const b = form.querySelector('button'); if (b.disabled) return; b.disabled = true;
+      res.replaceChildren(el('div', {class: 'am', role: 'status', text: 'Consultando Google News…'}));
+      try { const d = await api('/api/externo/google-news', {q: q.value, region: reg.value}); pintarExternos(res, d); }
+      catch (err) { res.replaceChildren(el('div', {class: 'bad', text: err.message})); } finally { b.disabled = false; } });
+    return el('div', {class: 'card externo'}, el('h2', {text: 'Búsqueda externa'}),
+      el('p', {class: 'am', text: 'Esto SÍ consulta internet ahora: tu búsqueda se envía a Google News. Gratis y sin clave; como mucho 1 cada 5 s y 30 por hora. Solo se guarda lo que tú guardes.'}), form, res);
+  }
+  function pintarExternos(caja, d) {
+    caja.replaceChildren(el('div', {class: 'toolbar'}, el('span', {text: `${d.resultados.length} resultado(s) externos · «${d.consulta}» · ${d.region} · consultado ${fecha(d.consultado_en)} · te quedan ${d.restantes_hora} esta hora`})),
+      ...(d.resultados.length ? d.resultados.map(r => {
+        const acc = el('div', {class: 'acciones'});
+        const guardar = (extra = {}) => api('/api/referencias', {tipo: 'enlace', url: r.url, titulo: r.titulo, fuente: r.medio, publicado_en: r.publicado_en,
+          externo: 'Google News', consultado_en: d.consultado_en, ...extra});
+        const sel = el('select', {'aria-label': 'Añadir a una investigación'}, el('option', {value: '', text: 'Añadir a investigación…'}), ...st.invs.map(i => el('option', {value: i.id, text: i.titulo})));
+        sel.addEventListener('change', async () => { if (!sel.value) return; try { const ref = await guardar(); await api(`/api/investigaciones/${sel.value}/fuentes`, {ref_id: ref.id});
+          sel.replaceWith(el('span', {class: 'marca', text: 'añadida ✓'})); } catch (e) { alert(e.message); } });
+        acc.append(el('a', {class: 'btn', href: safeUrl(r.url) || '#', target: '_blank', rel: 'noopener', text: 'Abrir ↗'}),
+          accion('☆ Guardar', async b => { await guardar({guardada: true}); b.textContent = '★ Guardada'; }), sel,
+          accion('Crear vídeo de esto', async () => crearVideoDeEsto({titulo: r.titulo, url: r.url, origen: 'Google News'})));
+        return el('article', {class: 'res-item'}, el('div', {class: 'meta'}, el('span', {class: 'b s-warn', text: 'externo'}), el('span', {text: r.medio}),
+          el('span', {text: r.publicado_en ? 'publicado ' + fecha(r.publicado_en) : 'fecha de publicación desconocida'})),
+          el('div', {class: 'vt'}, enlace(r.url, r.titulo)), acc);
+      }) : [vacio('Google News no devolvió nada para esa búsqueda.')]));
+  }
+
+  // ---------- Seguimiento (pestaña de la investigación)
+  async function pestanaSeguimiento(i) {
+    const d = await api(`/api/investigaciones/${i.id}/seguimiento`);
+    const s = d.seguimiento, activo = s && s.activo;
+    const txt = el('textarea', {class: 'campo', placeholder: 'una consulta por línea, p. ej.\nprecio México\nedición física'}); txt.value = s ? s.consultas.join('\n') : '';
+    const re = () => pintarDetalle(i.id);
+    return el('div', {},
+      el('p', {class: 'am', text: 'Novedades = noticias y vídeos que el Radar detectó después de tu última revisión y coinciden con alguna consulta. Se calcula con los datos del Radar que hay en tu Mac (python tools/descargar_datos.py los actualiza); con el Mac apagado no avisa.'}),
+      el('label', {class: 'ancho'}, 'Consultas', txt),
+      el('div', {class: 'acciones'}, accion(activo ? 'Guardar consultas' : 'Seguir esta investigación', async () => { await api(`/api/investigaciones/${i.id}/seguimiento`, {consultas: txt.value}); re(); }, 'pri'),
+        activo ? accion('Dejar de seguir', async () => { await api(`/api/investigaciones/${i.id}/seguimiento/dejar`, {}); re(); }) : null,
+        activo && d.novedades.length ? accion('Marcar todo como revisado', async () => { await api(`/api/investigaciones/${i.id}/seguimiento/revisado`, {}); re(); }) : null),
+      activo ? el('h3', {text: `Novedades desde ${fecha(s.revisado_en)} (${d.novedades.length})`}) : null,
+      ...(activo ? (d.novedades.length ? d.novedades.map(x => el('article', {class: 'res-item'},
+        el('div', {class: 'meta'}, el('span', {class: 'b', text: x.tipo_nombre}), el('span', {text: x.fuente || '—'}), el('span', {text: 'detectado ' + fecha(x.detectado)}),
+          el('span', {class: 'am', text: 'consulta: ' + x.consulta})),
+        el('div', {class: 'vt'}, enlace(x.url, x.titulo)),
+        el('div', {class: 'acciones'}, accion('Añadir a la investigación', async b => { await api(`/api/investigaciones/${i.id}/fuentes`, {tipo: x.tipo, origen: x.clave}); b.replaceWith(el('span', {class: 'marca', text: 'añadida ✓'})); }, 'pri'))))
+        : [vacio('Sin novedades desde tu última revisión.')]) : []));
+  }
+
+  // ---------- Asistente: la orden para el chat (no envía nada)
+  function preguntarEnChat(i) {
+    const PREG = ['¿Qué sabemos sobre este tema?', '¿Cuál es la fuente original?', '¿Qué afirmaciones siguen sin respaldo?', '¿Qué información se contradice?',
+      '¿Qué ha cambiado desde la última revisión?', '¿Qué me falta comprobar?'];
+    const sel = el('select', {'aria-label': 'Pregunta para el asistente'}, ...PREG.map(p => el('option', {value: p, text: p})));
+    return el('div', {class: 'inv-form'}, el('label', {}, 'Preguntar en el chat (0 €)', sel),
+      accion('Copiar la orden', async b => { const t = `/investigar ${i.id} ${sel.value}`; await navigator.clipboard.writeText(t); b.textContent = 'Copiada ✓ — pégala en Claude Code'; }),
+      el('span', {class: 'am', text: 'El asistente responde en el chat citando tus fuentes [F1] y afirmaciones [A1]. No modifica nada.'}));
+  }
+
   function alCambiarVista(ruta) {
     if (!window.PC_ESTUDIO) return;
     const fn = {'investigar/buscador': pintarBuscador, 'investigar/noticias': pintarNoticias, 'investigar/biblioteca': pintarBiblioteca,
@@ -509,5 +603,5 @@ const Investigar = (() => {
     const original = render;
     render = function () { original(); decorarVideos(); };  // eslint-disable-line no-global-assign
   }
-  return {iniciar};
+  return {iniciar, crearVideoDeEsto};
 })();

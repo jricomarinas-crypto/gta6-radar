@@ -105,8 +105,25 @@
   sin scroll horizontal.
 - Limitación: TikTok y YouTube se registran a mano. Conectar YouTube Analytics es una integración aparte (pide OK).
 
-### Pendiente del rediseño / investigación
-- Fase 3: asistente de investigación, búsquedas externas (con tu OK), Revisión, Calendario, atajos.
+### Fase 3 — HECHA Y PROBADA (17-nov)
+- **Asistente en el chat (0 €)**: `/investigar <id> [pregunta]` (`.claude/commands/investigar.md`) lee
+  `python -m estudio.asistente <id>` y responde citando [F1]/[A1]/[N1], separando datos, inferencias y propuestas; no
+  busca fuera salvo petición expresa y no modifica nada. En cada investigación: «Preguntar en el chat» copia la orden.
+- **Google News (externo, gratis)** en el Buscador (`estudio/externo.py`): solo con botón, aviso de que la consulta va
+  a Google News, límite 1 cada 5 s y 30/hora, resultados marcados «externo» con medio y fecha; Guardar / Añadir a
+  investigación / Crear vídeo de esto. YouTube sigue siendo solo un enlace.
+- **Seguimiento** (`estudio/seguimiento.py`): consultas por investigación; novedades = lo que el Radar detectó después
+  de tu última revisión. Pestaña «Seguimiento», Inicio › Continuar y Sistema › Automatizaciones. Se calcula con los
+  datos del Radar de tu Mac (no avisa con el Mac apagado).
+- **Crear › Revisión** (solo lo que espera tu decisión, con la misma tarjeta de pieza) y **Crear › Calendario**
+  (`fecha_prevista`, mes con previstas, publicadas y lanzamiento; lista en móvil; «Programar…»; no publica nada).
+- **«Crear vídeo de esto»** en noticias, vídeos, buscador, Google News y Temas: diálogo → pieza en etapa Idea con la
+  fuente como señal. **Chips** de filtros en Vídeos. **Atajos**: g+h/b/n/i/r/p/c/e, «/» y «?» (nunca escribiendo).
+- Probado: `tests/test_fase3.py` (4) + 34 = 38 en verde; navegador: Google News real (40 resultados), seguimiento,
+  Revisión, Calendario (escritorio y móvil), diálogo, chips, atajos; consola sin errores.
+
+### Pendiente
+- Lo que pide Javier en megaprompt 2.0 (choques en su cabecera) y conectar YouTube Analytics (con su OK).
 
 ### Documentos
 - `README.md` sustituido por la versión de Javier, ampliada con Estudio, modo suscripción, fondo real y tu voz.

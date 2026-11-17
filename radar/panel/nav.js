@@ -8,7 +8,7 @@ const MENU = [
   {id: 'canal', ico: '▤', t: 'Mi canal', items: [['estadisticas', 'Estadísticas'], ['rinde', 'Lo que más rinde'],
     ['mis-videos', 'Mis vídeos'], ['colaboradores', 'Colaboradores']]},
   {id: 'crear', ico: '✚', t: 'Crear', items: [['ideas', 'Fábrica de ideas'], ['guiones', 'Guiones y dossiers'],
-    ['produccion', 'En producción'], ['revision', 'Revisión', '3'], ['calendario', 'Calendario', '3'], ['episodios', 'Episodios y archivos']]},
+    ['produccion', 'En producción'], ['revision', 'Revisión'], ['calendario', 'Calendario'], ['episodios', 'Episodios y archivos']]},
   {id: 'sistema', ico: '⚙', t: 'Sistema', items: [['fuentes', 'Fuentes vigiladas'], ['ejecuciones', 'Automatizaciones y ejecuciones'],
     ['configuracion', 'Configuración']]},
 ];
@@ -115,6 +115,35 @@ function pintarEjecuciones() {
       ...Object.entries(stats).filter(([k]) => k !== 'errores').flatMap(([k, v]) => [el('dt', {text: k}), el('dd', {text: typeof v === 'object' ? JSON.stringify(v) : String(v)})])),
     el('p', {class: 'am', text: 'El Radar se ejecuta en GitHub Actions (radar.yml). Esta página muestra la última ejecución incluida en los datos del panel.'}));
 }
+// ===== Atajos de teclado (fase 3). Nunca saltan mientras escribes en un campo.
+const Atajos = (() => {
+  const IR = {h: ['inicio/hoy', 'Hoy'], b: ['investigar/buscador', 'Buscador'], n: ['investigar/noticias', 'Noticias y fuentes'],
+    i: ['investigar/investigaciones', 'Mis investigaciones'], r: ['crear/revision', 'Revisión'], p: ['crear/produccion', 'En producción'],
+    c: ['crear/calendario', 'Calendario'], e: ['canal/estadisticas', 'Estadísticas']};
+  let g = 0;
+  const escribiendo = t => t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+  function ayuda() {
+    if ($('#atajos-ayuda')) return;
+    const d = el('dialog', {id: 'atajos-ayuda', class: 'dialogo', 'aria-label': 'Atajos de teclado'}, el('h2', {text: 'Atajos de teclado'}),
+      el('dl', {class: 'kv'}, ...Object.entries(IR).flatMap(([k, [, t]]) => [el('dt', {}, el('kbd', {text: 'g'}), ' ', el('kbd', {text: k})), el('dd', {text: t})]),
+        el('dt', {}, el('kbd', {text: '/'})), el('dd', {text: 'Buscador (pone el cursor en la búsqueda)'}), el('dt', {}, el('kbd', {text: '?'})), el('dd', {text: 'Esta ayuda'})),
+      el('p', {class: 'am', text: 'No funcionan mientras escribes en un campo. Esc cierra.'}),
+      el('button', {class: 'btn', type: 'button', text: 'Cerrar', onclick: () => d.close()}));
+    document.body.append(d); d.addEventListener('close', () => d.remove()); d.showModal();
+  }
+  function iniciar() {
+    document.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey || escribiendo(e.target) || document.querySelector('dialog[open]')) return;
+      if (g && Date.now() - g < 1500 && IR[e.key]) { e.preventDefault(); g = 0; location.hash = '#/' + IR[e.key][0]; return; }
+      g = 0;
+      if (e.key === 'g') { g = Date.now(); return; }
+      if (e.key === '/') { e.preventDefault(); location.hash = '#/investigar/buscador'; setTimeout(() => { const i = document.querySelector('#buscador input[type=search]'); if (i) i.focus(); }, 300); return; }
+      if (e.key === '?') { e.preventDefault(); ayuda(); }
+    });
+  }
+  return {iniciar, ayuda, IR};
+})();
+
 async function pintarConfiguracion() {
   const filas = [['Datos', DATA.demo ? 'DEMOSTRACIÓN (inventados)' : 'reales'], ['Generados', `${new Date(DATA.generated_at).toLocaleString('es-ES')} (${ago(DATA.generated_at)})`],
     ['Zona horaria de los días', (DATA.series || {}).zona || '—'], ['Lanzamiento (config.yaml)', DATA.release_date || '—'],
@@ -127,6 +156,8 @@ async function pintarConfiguracion() {
         el('dl', {class: 'kv'}, ...d.conexiones.flatMap(c => [el('dt', {text: c.nombre}), el('dd', {class: c.ok ? 'ok' : 'am', text: c.ok ? 'conectada' : 'no conectada · ' + c.como})])));
     } catch (e) { caja.push(el('p', {class: 'bad', text: 'No se pudo consultar el Estudio: ' + e.message})); }
   }
+  caja.push(el('h2', {text: 'Atajos de teclado'}), el('p', {class: 'am', text: 'g + h Hoy · g + b Buscador · g + n Noticias · g + i Investigaciones · g + r Revisión · g + p En producción · g + c Calendario · g + e Estadísticas · / Buscador · ? ayuda. No funcionan mientras escribes.'}),
+    el('button', {class: 'btn', type: 'button', text: 'Ver atajos', onclick: () => Atajos.ayuda()}));
   $('#estado-datos').replaceChildren(...caja);
 }
 
@@ -146,6 +177,8 @@ function iniciarNavegacion() {
 
 Investigar.iniciar();
 Canal.iniciar();
+Crear.iniciar();
+Atajos.iniciar();
 iniciarNavegacion();
 arrancarPanel();
 Hoy.iniciar();

@@ -117,7 +117,9 @@ def estado(con, tid: str) -> dict:
         "formato": t["formato"] if t["formato"] in ("A", "B", "C") else VARIANTES.get(variante, ("?", ""))[0],
         "variante_nombre": VARIANTES.get(t.get("variante") or t["formato"], ("", ""))[1],
         "plataformas": t["plataformas"], "creado_en": t["creado_en"], "estado_editorial": t.get("estado_editorial"),
-        "etapa": etapa, "siguiente": falta, "legado": legado,
+        "etapa": etapa, "siguiente": falta, "legado": legado, "fecha_prevista": t.get("fecha_prevista"),
+        # Crear › Revisión: lo que espera una decisión TUYA (aprobar idea, aprobar guion válido o revisar el vídeo)
+        "espera_a_javier": etapa == "Brief" or etapa == "Revisión" or (etapa == "Guion" and gi["estado"] == "valido" and not guion_ok),
         "aprobado": {"idea": idea_ok, "guion": guion_ok, "video": video_ok},
         "guion": {k: gi.get(k) for k in ("estado", "ruta", "errores", "avisos", "hash")},
         "version": ({k: ult[k] for k in ("id", "n", "estado_produccion", "etapa", "error", "intentos", "duracion",
@@ -143,12 +145,34 @@ def enviar_al_estudio(con, idea: dict, variante: str, plataformas: list[str]) ->
     return db.crear_trabajo(con, idea, variante, VARIANTES[variante][0], plataformas)
 
 
-def idea_a_mano(titulo: str, por_que: str) -> dict:
+def idea_a_mano(titulo: str, por_que: str, fuentes: list | None = None, origen: str = "a mano") -> dict:
+    """Idea escrita por Javier o creada con «Crear vídeo de esto». Las fuentes son SEÑALES (contexto), no hechos:
+    el guion verifica cada dato aparte (fabrica/encargo.py lo recuerda)."""
     titulo = (titulo or "").strip()[:120]
     if len(titulo) < 6:
         raise Bloqueado("Escribe un título de al menos 6 letras")
+    fs = [{"titulo": str(f.get("titulo") or "")[:200], "url": str(f.get("url") or "")[:500]}
+          for f in (fuentes or [])[:5] if isinstance(f, dict) and str(f.get("url") or "").startswith(("https://", "http://"))]
     return {"id": f"mano-{datetime.now():%Y%m%d%H%M}-{slug(titulo, 30)}", "titulo": titulo,
-            "por_que": (por_que or "").strip()[:300] or "Idea de Javier", "fuentes": [], "origen": "a mano"}
+            "por_que": (por_que or "").strip()[:300] or "Idea de Javier", "fuentes": fs, "origen": str(origen)[:60] or "a mano"}
+
+
+def programar(con, tid: str, fecha: str | None) -> dict:
+    """Fecha prevista de publicación (Calendario). Es tu planificación: no publica nada."""
+    import re
+    fecha = (fecha or "").strip()
+    if fecha and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", fecha):
+        raise Bloqueado("La fecha tiene que ser AAAA-MM-DD.")
+    if fecha:
+        try:
+            datetime.strptime(fecha, "%Y-%m-%d")
+        except ValueError as e:
+            raise Bloqueado("Esa fecha no existe.") from e
+    if not db.trabajo(con, tid):
+        raise Bloqueado("Esa pieza no existe.")
+    con.execute("UPDATE trabajos SET fecha_prevista=? WHERE id=?", (fecha or None, tid))
+    con.commit()
+    return estado(con, tid)
 
 
 def aprobar(con, tid: str, tipo: str) -> dict:

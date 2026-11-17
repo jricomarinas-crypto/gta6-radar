@@ -174,7 +174,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/api/enviar":
                 if body.get("a_mano"):
-                    idea = flujo.idea_a_mano(body.get("titulo"), body.get("por_que"))
+                    idea = flujo.idea_a_mano(body.get("titulo"), body.get("por_que"), body.get("fuentes"),
+                                             body.get("origen") or "a mano")
                 else:
                     idea = {i["id"]: i for i in _ideas()[0]}.get(str(body.get("idea_id", "")))
                     if not idea:
@@ -200,10 +201,12 @@ class Handler(BaseHTTPRequestHandler):
                 destino.mkdir(parents=True, exist_ok=True)
                 subprocess.run(["open", str(destino)], check=False)
                 return self._json({"ok": True})
-            m = re.match(r"^/api/piezas/([0-9a-f]{6})/(aprobar|cambios|crear|reintentar|cancelar|exportar|subido|descartar|opciones)$", path)
+            m = re.match(r"^/api/piezas/([0-9a-f]{6})/(aprobar|cambios|crear|reintentar|cancelar|exportar|subido|descartar|opciones|programar)$", path)
             if not m:
                 return self._json({"error": "No encontrado"}, 404)
             tid, accion = m.groups()
+            if accion == "programar":
+                return self._json(flujo.programar(con, tid, body.get("fecha")))
             if accion == "opciones":
                 return self._json(flujo.poner_opciones(con, tid, body.get("fondo"), body.get("voz")))
             if accion == "aprobar":

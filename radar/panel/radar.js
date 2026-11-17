@@ -64,6 +64,7 @@ function filtered() {
 }
 
 function render() {
+  renderChips();
   const vids = filtered();
   const cut = Date.now() - state.period * 36e5;
   renderKpis(vids, cut);
@@ -72,6 +73,19 @@ function render() {
   renderHourly(vids);
   renderAlerts(cut);
   renderNews(cut);
+}
+
+// chips con los filtros activos de Vídeos: cada uno con ✕ y «Limpiar filtros» (los valores por defecto no salen)
+const FILTROS = {lang: ['#f-lang', ''], fmt: ['#f-fmt', ''], topic: ['#f-topic', ''], risk: ['#f-risk', ''], score: ['#f-score', 0], q: ['#f-q', '']};
+function renderChips() {
+  let caja = $('#f-chips');
+  if (!caja) { caja = el('div', {class: 'chips', id: 'f-chips', 'aria-live': 'polite'}); document.querySelector('[data-vista="investigar/videos"] .filters').after(caja); }
+  const nombre = (k, v) => { const s = $(FILTROS[k][0]); if (k === 'score') return 'score ≥ ' + v; if (k === 'q') return '«' + v + '»';
+    const o = s && [...s.options].find(o => o.value === v); return o ? o.textContent : v; };
+  const quitar = k => { state[k] = FILTROS[k][1]; const s = $(FILTROS[k][0]); if (s) s.value = FILTROS[k][1]; if (k === 'score') $('#f-score-v').textContent = '0'; render(); };
+  const activos = Object.keys(FILTROS).filter(k => state[k] && state[k] !== FILTROS[k][1]);
+  caja.replaceChildren(...activos.map(k => el('span', {class: 'chip'}, nombre(k, state[k]), el('button', {type: 'button', 'aria-label': 'Quitar filtro ' + nombre(k, state[k]), text: '✕', onclick: () => quitar(k)}))),
+    ...(activos.length > 1 ? [el('button', {type: 'button', class: 'btn', text: 'Limpiar filtros', onclick: () => { activos.forEach(k => { state[k] = FILTROS[k][1]; const s = $(FILTROS[k][0]); if (s) s.value = FILTROS[k][1]; }); $('#f-score-v').textContent = '0'; render(); }})] : []));
 }
 
 function renderKpis(vids, cut) {
@@ -251,7 +265,7 @@ function renderOportunidades() {
   $('#oportunidades').replaceChildren(
     el('h3', {text: 'Ideas para hoy'}),
     O.ideas_fecha ? el('div', {class: 'hint', text: `Generadas con IA el ${O.ideas_fecha} a partir de los datos del Radar. Contenido propio: nada de clips ajenos.`}) : null,
-    ideas.length ? el('div', {class: 'ideas'}, ...ideas.map(i => el('div', {class: 'idea'},
+    ideas.length ? el('div', {class: 'ideas'}, ...ideas.map(i => el('div', {class: 'idea', 'data-titulo': i.titulo},
       el('div', {class: 'badges'}, el('span', {class: 'b s-info', text: i.formato === 'episodio' ? 'Episodio' : 'Short'}),
         i.tema ? el('span', {class: 'b', text: TOPIC[i.tema] || i.tema}) : null),
       el('div', {class: 'vt', text: i.titulo}), el('div', {class: 'am', text: i.por_que || ''}))))
@@ -259,7 +273,7 @@ function renderOportunidades() {
 
     el('h3', {text: 'Temas con hueco'}),
     el('div', {class: 'hint', text: 'Mucha demanda (vistas/hora en 48 h) y pocos vídeos en español. 100 = el mayor hueco ahora mismo.'}),
-    temas.length ? el('div', {}, ...temas.map(t => { const row = el('div', {class: 'gap'},
+    temas.length ? el('div', {}, ...temas.map(t => { const row = el('div', {class: 'gap', 'data-titulo': `${t.label}: lo que nadie cuenta en español`, 'data-url': t.url || ''},
       el('div', {}, el('div', {class: 'vt', text: t.label}),
         el('div', {class: 'am'}, `${fmt(t.demanda)} vistas/h · ${t.videos} vídeos (${t.videos_es} en español) · ej.: `, link(t.url, t.ejemplo))),
       el('div', {class: 'track'}, el('div', {class: 'fill', style: `width:${t.hueco}%`})),
@@ -402,7 +416,8 @@ function piezaCard(p) {
       p.legado ? el('span', {class: 'b', text: 'antes del flujo de aprobación'}) : null,
       p.idea.investigacion_id ? el('a', {class: 'b s-info', href: '#/investigar/investigaciones/' + p.idea.investigacion_id,
         text: `viene de una investigación · dossier v${p.idea.dossier_n}`}) : null),
-    pasos(p), el('div', {class: 'sig'}, el('b', {text: p.etapa + ': '}), p.siguiente));
+    pasos(p), el('div', {class: 'sig'}, el('b', {text: p.etapa + ': '}), p.siguiente),
+    p.fecha_prevista ? el('div', {class: 'am', text: '📅 Prevista para el ' + new Date(p.fecha_prevista + 'T12:00:00').toLocaleDateString('es-ES', {weekday: 'long', day: 'numeric', month: 'long'}) + ' (tu planificación: no se publica sola)'}) : '');
   const acciones = el('div', {class: 'row'});
   const v = p.version;
   if (p.etapa === 'Brief') acciones.append(boton('Aprobar idea', () => api(`/api/piezas/${p.id}/aprobar`, {tipo: 'idea'}), true));
@@ -453,6 +468,10 @@ function piezaCard(p) {
             if (u) await api(`/api/piezas/${p.id}/subido`, {plataforma: pl, url: u}); }) : null))); });
     if (Object.values(ex).some(e => e.disponible)) acciones.append(boton('Abrir en el Finder', () => api('/api/abrir-carpeta', {pieza: p.id})));
   }
+  if (!['Publicado', 'Descartada'].includes(p.etapa))
+    acciones.append(boton(p.fecha_prevista ? 'Cambiar fecha…' : 'Programar…', async () => {
+      const f = prompt('Fecha prevista de publicación (AAAA-MM-DD). Vacío para quitarla. Es solo tu planificación: no publica nada.', p.fecha_prevista || '');
+      if (f !== null) await api(`/api/piezas/${p.id}/programar`, {fecha: f.trim()}); }));
   if (!['Exportación', 'Publicado', 'Descartada'].includes(p.etapa))
     acciones.append(boton('Descartar…', async () => { const m = prompt('¿Por qué la descartas?'); if (m) await api(`/api/piezas/${p.id}/descartar`, {motivo: m}); }));
   c.append(acciones);

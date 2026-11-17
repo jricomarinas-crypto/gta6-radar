@@ -41,6 +41,8 @@ python -m unittest tests.test_corte1 -v            # pruebas del corte 1 (carpet
 
 ## Estudio y Fábrica — modo suscripción (0 €)
 Documento maestro: `docs/megaprompt-claude-code.md` (manda sobre `docs/principios-producto.md` y `docs/plan-v2.md`).
+`docs/megaprompt-2.0.md` es la evolución propuesta por Javier: sus choques con lo construido están en su cabecera; no los resuelvas sin su OK.
+Vídeos: por defecto fondo de vídeo real (Pexels / `assets/broll/`) y voz de Javier grabada en el Estudio (`fabrica/broll.py`, `fabrica/voz_propia.py`).
 Estado honesto en `docs/ESTADO.md`: actualízalo al terminar cada sesión.
 `ia.modo: suscripcion` → la app no llama a ninguna IA. Cuando Javier diga «Escribe el guion del encargo X» o `/guiones-del-dia`:
 1. `python -m fabrica.encargo X` (idea, formato, ruta del guion en `estudio/guiones/AAAA-MM-DD/X.json`).

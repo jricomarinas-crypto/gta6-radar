@@ -228,6 +228,11 @@ fabrica:
     tiktok_larga: [61, 75]
     shorts: [25, 60]
   volumen_lufs: -14
+  fondo_por_defecto: "video"        # video (Miami/Florida real de Pexels o assets/broll/) | grafico
+  voz_por_defecto: "propia"         # propia (la grabas en el Estudio) | sintetica (Leo y Sofi, Edge TTS)
+  broll:
+    busquedas: ["Miami beach", "Miami night neon", "Miami skyline", "Florida highway", "Florida everglades", "palm trees sunset"]
+    excluir: ["gta", "rockstar", "gameplay", "game", "trailer", "playstation", "xbox"]
   # Kits del calendario: ideas que aparecen arriba en la Fábrica mientras dura su ventana (hora de España).
   # Los datos (horas, precios) NO van aquí: se verifican en la web al escribir cada guion.
   kits:

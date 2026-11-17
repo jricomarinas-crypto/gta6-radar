@@ -9,3 +9,5 @@ tools/client_secret.json
 data/estudio_site/
 estudio/ideas/
 estudio/guiones/
+assets/broll/_pexels/
+.DS_Store

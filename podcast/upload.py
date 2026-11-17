@@ -22,7 +22,9 @@ def _service():
     return build("youtube", "v3", credentials=creds, cache_discovery=False)
 
 
-def upload(video: Path, title: str, description: str, tags: list[str], thumb: Path | None = None) -> str:
+def upload(video: Path, title: str, description: str, tags: list[str], thumb: Path | None = None,
+           sintetico: bool | None = None) -> str:
+    """sintetico: si el vídeo tiene voz o imagen sintética realista. None = valor de config.yaml (subida.contenido_sintetico)."""
     from googleapiclient.http import MediaFileUpload
 
     up = cfg()["podcast"]["subida"]
@@ -32,7 +34,7 @@ def upload(video: Path, title: str, description: str, tags: list[str], thumb: Pa
                     "categoryId": str(up.get("categoria_id", "20")), "defaultLanguage": lang,
                     "defaultAudioLanguage": lang},
         "status": {"privacyStatus": up.get("privacidad", "private"), "selfDeclaredMadeForKids": False,
-                   "containsSyntheticMedia": bool(up.get("contenido_sintetico", True))},
+                   "containsSyntheticMedia": bool(up.get("contenido_sintetico", True) if sintetico is None else sintetico)},
     }
     yt = _service()
     req = yt.videos().insert(part="snippet,status", body=body,

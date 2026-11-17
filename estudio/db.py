@@ -56,6 +56,12 @@ CREATE TABLE IF NOT EXISTS eventos (
     fecha TEXT NOT NULL, origen TEXT NOT NULL DEFAULT 'registro'
 );
 CREATE INDEX IF NOT EXISTS idx_eventos_fecha ON eventos(fecha);
+CREATE TABLE IF NOT EXISTS tomas (
+    trabajo_id TEXT NOT NULL, escena INTEGER NOT NULL,
+    texto_hash TEXT NOT NULL,           -- huella del texto grabado: si la escena cambia, la toma deja de valer
+    ruta TEXT NOT NULL, duracion REAL, creada_en TEXT,
+    PRIMARY KEY (trabajo_id, escena)
+);
 CREATE TABLE IF NOT EXISTS exportaciones (
     version_id TEXT NOT NULL, plataforma TEXT NOT NULL,
     ruta TEXT, manifiesto_ruta TEXT, nombre TEXT, exportada_en TEXT, verificada_en TEXT,
@@ -70,6 +76,12 @@ COLUMNAS_TRABAJOS = {
     "estado_publicacion": "TEXT DEFAULT 'no_publicado'",
     "variante": "TEXT",
     "nn": "TEXT",
+    "fondo": "TEXT",   # video | grafico
+    "voz": "TEXT",     # propia | sintetica
+}
+COLUMNAS_VERSIONES = {
+    "clave": "TEXT",     # huella de guion + fondo + voz + tomas: si cambia, hace falta un vídeo nuevo
+    "opciones": "TEXT",  # {fondo, voz, creditos[]} usados en ese render
 }
 
 
@@ -88,6 +100,12 @@ def _migrar(con) -> None:
     for c, tipo in COLUMNAS_TRABAJOS.items():
         if c not in cols:
             con.execute(f"ALTER TABLE trabajos ADD COLUMN {c} {tipo}")
+    cols_v = {r["name"] for r in con.execute("PRAGMA table_info(versiones)")}
+    for c, tipo in COLUMNAS_VERSIONES.items():
+        if c not in cols_v:
+            con.execute(f"ALTER TABLE versiones ADD COLUMN {c} {tipo}")
+            if c == "clave":  # versiones anteriores: su clave es la huella del guion (voz sintética, fondo gráfico)
+                con.execute("UPDATE versiones SET clave=guion_hash WHERE clave IS NULL")
     row = con.execute("SELECT v FROM meta WHERE k='version_esquema'").fetchone()
     actual = int(row["v"]) if row else 1
     if actual < 2:
@@ -176,6 +194,7 @@ def version(con, vid: str) -> dict | None:
     v = dict(r)
     v["guion"] = jload(v.get("guion"), {})
     v["calidad"] = jload(v.get("calidad"), {})
+    v["opciones"] = jload(v.get("opciones"), {})
     return v
 
 
@@ -188,18 +207,22 @@ def ultima_version(con, tid: str) -> dict | None:
     return version(con, r["id"]) if r else None
 
 
-def nueva_version(con, tid: str, guion: dict, guion_hash: str) -> dict:
+def nueva_version(con, tid: str, guion: dict, guion_hash: str, clave: str | None = None,
+                  opciones: dict | None = None) -> dict:
     n = (con.execute("SELECT MAX(n) m FROM versiones WHERE trabajo_id=?", (tid,)).fetchone()["m"] or 0) + 1
     vid = f"{tid}-v{n}"
-    con.execute("""INSERT INTO versiones(id,trabajo_id,n,guion_hash,guion,estado_produccion,etapa,creada_en,actualizada_en)
-                   VALUES(?,?,?,?,?,'pendiente','En cola',?,?)""", (vid, tid, n, guion_hash, jdump(guion), iso(), iso()))
+    con.execute("""INSERT INTO versiones(id,trabajo_id,n,guion_hash,guion,estado_produccion,etapa,creada_en,actualizada_en,
+                                         clave,opciones)
+                   VALUES(?,?,?,?,?,'pendiente','En cola',?,?,?,?)""",
+                (vid, tid, n, guion_hash, jdump(guion), iso(), iso(), clave or guion_hash, jdump(opciones or {})))
     con.commit()
     return version(con, vid)
 
 
 def actualizar_version(con, vid: str, **campos) -> None:
-    if "calidad" in campos:
-        campos["calidad"] = jdump(campos["calidad"])
+    for k in ("calidad", "opciones"):
+        if k in campos:
+            campos[k] = jdump(campos[k])
     campos["actualizada_en"] = iso()
     sets = ", ".join(f"{k}=?" for k in campos)
     con.execute(f"UPDATE versiones SET {sets} WHERE id=?", (*campos.values(), vid))

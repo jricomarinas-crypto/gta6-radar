@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 
 from fabrica.exportar import ExportacionFallida, verificar
+from fabrica import voz_propia
 from fabrica.guion import GuionNoValido, hash_guion, validar
 from radar.db import iso
 
@@ -58,7 +59,11 @@ def estado(con, tid: str) -> dict:
     idea_ok = "idea" in ap
     guion_ok = idea_ok and gi["estado"] == "valido" and ap.get("guion", {}).get("guion_hash") == h
     v_ap = next((v for v in vs if "video" in ap and v["n"] == ap["video"]["version_n"]), None)
-    video_ok = guion_ok and v_ap is not None and v_ap["guion_hash"] == h and ap["video"]["guion_hash"] == h
+    escenas = (gi.get("guion") or {}).get("escenas", [])
+    clave, op = voz_propia.clave_render(con, t, h, escenas) if h else (None, voz_propia.opciones(t))
+    tomas = voz_propia.estado(con, tid, escenas) if op["voz"] == "propia" and escenas else []
+    faltan_tomas = [x["escena"] + 1 for x in tomas if not x["valida"]]
+    video_ok = guion_ok and v_ap is not None and v_ap.get("clave") == clave and ap["video"]["guion_hash"] == h
     legado = bool(ult and ult.get("legado"))
 
     export = {}
@@ -87,8 +92,12 @@ def estado(con, tid: str) -> dict:
         etapa = "Guion"
         falta = ("El guion cambió desde que lo aprobaste: revísalo y vuelve a aprobarlo."
                  if "guion" in ap else "Revisa el guion y apruébalo para poder crear el vídeo.")
-    elif not ult or ult["guion_hash"] != h or ult.get("legado"):
-        etapa, falta = "Montaje", "Pulsa «Crear vídeo»: se fabrica con el guion aprobado."
+    elif (not ult or ult.get("clave") != clave or ult.get("legado")) and faltan_tomas:
+        etapa = "Montaje"
+        falta = ("Graba tu voz: faltan las escenas " + ", ".join(map(str, faltan_tomas)) +
+                 " (o cambia la voz a Leo y Sofi).")
+    elif not ult or ult.get("clave") != clave or ult.get("legado"):
+        etapa, falta = "Montaje", "Pulsa «Crear vídeo»: se fabrica con el guion aprobado, el fondo y la voz elegidos."
     elif ult["estado_produccion"] in ("pendiente", "en_curso"):
         etapa, falta = "Montaje", f"Fabricando: {ult['etapa']}."
     elif ult["estado_produccion"] == "fallido":
@@ -112,7 +121,9 @@ def estado(con, tid: str) -> dict:
         "aprobado": {"idea": idea_ok, "guion": guion_ok, "video": video_ok},
         "guion": {k: gi.get(k) for k in ("estado", "ruta", "errores", "avisos", "hash")},
         "version": ({k: ult[k] for k in ("id", "n", "estado_produccion", "etapa", "error", "intentos", "duracion",
-                                         "calidad", "guion_hash")} | {"video": bool(ult.get("video_ruta"))}) if ult else None,
+                                         "calidad", "guion_hash", "clave", "opciones")}
+                    | {"video": bool(ult.get("video_ruta"))}) if ult else None,
+        "opciones": op, "tomas": tomas, "clave": clave,
         "exportacion": export,
         "cambios": [dict(r) for r in con.execute("SELECT nota, version_n, creada_en FROM cambios WHERE trabajo_id=? "
                                                   "ORDER BY creada_en DESC LIMIT 5", (tid,))],
@@ -156,7 +167,7 @@ def aprobar(con, tid: str, tipo: str) -> dict:
         v = db.ultima_version(con, tid)
         if not st["aprobado"]["guion"]:
             raise Bloqueado("El guion no está aprobado (o cambió): apruébalo antes que el vídeo.")
-        if not v or v["estado_produccion"] != "listo" or v["guion_hash"] != st["guion"]["hash"]:
+        if not v or v["estado_produccion"] != "listo" or v.get("clave") != st["clave"]:
             raise Bloqueado("No hay un vídeo terminado con el guion actual.")
         db.aprobar(con, tid, "video", v["n"], v["guion_hash"])
     else:
@@ -180,14 +191,20 @@ def crear_video(con, tid: str) -> dict:
     st = estado(con, tid)
     if not (st["aprobado"]["idea"] and st["aprobado"]["guion"]):
         raise Bloqueado("Para crear el vídeo hacen falta la idea y el guion aprobados.")
-    h = st["guion"]["hash"]
+    h, clave = st["guion"]["hash"], st["clave"]
+    t = db.trabajo(con, tid)
+    g = leer_guion(t)["guion"]
+    if st["opciones"]["voz"] == "propia":
+        try:
+            voz_propia.rutas_validas(con, tid, g["escenas"])
+        except voz_propia.TomaNoValida as e:
+            raise Bloqueado(f"{e} O cambia la voz a «Leo y Sofi».") from e
     for v in db.versiones(con, tid):
-        if v["guion_hash"] == h and v["estado_produccion"] in ("pendiente", "en_curso", "listo"):
+        if v.get("clave") == clave and v["estado_produccion"] in ("pendiente", "en_curso", "listo"):
             return v  # idempotente: ya existe
-        if v["guion_hash"] == h and v["estado_produccion"] == "fallido":
+        if v.get("clave") == clave and v["estado_produccion"] == "fallido":
             return reintentar(con, tid)
-    g = leer_guion(db.trabajo(con, tid))["guion"]
-    return db.nueva_version(con, tid, g, h)
+    return db.nueva_version(con, tid, g, h, clave, st["opciones"])
 
 
 def reintentar(con, tid: str) -> dict:
@@ -246,4 +263,24 @@ def descartar_pieza(con, tid: str, motivo: str) -> dict:
         raise Bloqueado("Di por qué la descartas: el motivo sirve para aprender.")
     con.execute("UPDATE trabajos SET estado_editorial='descartada', motivo_descarte=? WHERE id=?", (motivo[:300], tid))
     con.commit()
+    return estado(con, tid)
+
+
+def poner_opciones(con, tid: str, fondo: str | None, voz: str | None) -> dict:
+    try:
+        voz_propia.poner_opciones(con, tid, fondo, voz)
+    except voz_propia.TomaNoValida as e:
+        raise Bloqueado(str(e)) from e
+    return estado(con, tid)
+
+
+def guardar_toma(con, tid: str, n: int, datos: bytes, mime: str) -> dict:
+    t = db.trabajo(con, tid)
+    gi = leer_guion(t)
+    if gi["estado"] != "valido":
+        raise Bloqueado("Primero tiene que haber un guion válido.")
+    try:
+        voz_propia.guardar(con, t, gi["guion"]["escenas"], n, datos, mime)
+    except voz_propia.TomaNoValida as e:
+        raise Bloqueado(str(e)) from e
     return estado(con, tid)

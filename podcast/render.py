@@ -370,7 +370,10 @@ def _concat_file(items: list[tuple[Path, float]], path: Path) -> Path:
 
 
 def ffmpeg_compose(items, audio: Path, ass: Path, out: Path, W: int, H: int, wave_box: tuple, duration: float,
-                   bar_color: str = PINK, audio_ss: float = 0.0, fade: bool = False, lufs: float = -15):
+                   bar_color: str = PINK, audio_ss: float = 0.0, fade: bool = False, lufs: float = -15,
+                   fondo: Path | None = None):
+    """fondo: vídeo de fondo opcional (W×H, ya con la duración justa). Si se da, los fotogramas van encima
+    con transparencia (PNG RGBA); si no, los fotogramas son la imagen completa, como siempre."""
     work = out.parent
     lst = _concat_file(items, work / (out.stem + "_frames.txt"))
     music = ROOT / (cfg()["podcast"].get("musica_fondo") or "_none_")
@@ -381,9 +384,13 @@ def ffmpeg_compose(items, audio: Path, ass: Path, out: Path, W: int, H: int, wav
     cmd += ["-f", "lavfi", "-i", f"color=c=0x{bar_color.lstrip('#')}:s={W}x8:r=30:d={duration:.3f}"]
     if has_music:
         cmd += ["-stream_loop", "-1", "-i", str(music)]
+    i_fondo = 4 if has_music else 3
+    if fondo:
+        cmd += ["-i", str(fondo)]
     afade = f",afade=t=in:d=0.25,afade=t=out:st={max(0, duration - 0.6):.2f}:d=0.6" if fade else ""
     fc = [
-        "[0:v]fps=30,format=rgba[bg]",
+        (f"[{i_fondo}:v]fps=30,format=rgba[base];[0:v]fps=30,format=rgba[fr];[base][fr]overlay=0:0:format=auto[bg]"
+         if fondo else "[0:v]fps=30,format=rgba[bg]"),
         f"[1:a]aresample=48000{afade},asplit=3[voice][sc][aw]",
         f"[aw]showwaves=s={ww}x{wh}:mode=cline:rate=30:scale=sqrt:draw=full:colors=0xFFFFFF,format=rgba,colorchannelmixer=aa=0.8[wv]",
         f"[bg][wv]overlay={wx}:{wy}[v1]",

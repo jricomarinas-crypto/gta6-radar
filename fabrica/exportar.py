@@ -26,6 +26,26 @@ from .guion import fuentes, plano
 
 CARPETAS = {"tiktok": "TikTok", "shorts": "YouTube Shorts"}
 AVISO = "Este video usa voces sintéticas. Cada dato lleva su fuente; los rumores se indican como tales."
+AVISO_PROPIA = "Narración: voz real del creador. Cada dato lleva su fuente; los rumores se indican como tales."
+
+
+def _aviso(op: dict) -> str:
+    return AVISO_PROPIA if op.get("voz") == "propia" else AVISO
+
+
+def _creditos_txt(op: dict) -> str:
+    cr = [c for c in op.get("creditos", []) if c.get("fuente") == "Pexels" and c.get("autor")]
+    if not cr:
+        return ""
+    return "Vídeo de fondo: " + "; ".join(f"{c['autor']} (Pexels) {c.get('url', '')}".strip() for c in cr) + "\n\n"
+
+
+def _ia_paso(op: dict, plataforma: str) -> str:
+    if op.get("voz") == "propia":
+        return ("- La voz es tuya y el vídeo de fondo es real: no hace falta la etiqueta de IA salvo que uses "
+                "algo generado con IA (revísalo).")
+    return ("- Activa «Contenido generado por IA» (voces sintéticas)." if plataforma == "tiktok"
+            else "- Marca «Contenido alterado o sintético» en YouTube Studio.")
 
 
 class ExportacionFallida(RuntimeError):
@@ -44,24 +64,26 @@ def _fuentes_txt(g: dict) -> str:
     return "\n".join(f"• {f['titulo']}: {f['url']}" for f in fuentes(g))
 
 
-def _txt_tiktok(g: dict) -> str:
+def _txt_tiktok(g: dict, op: dict | None = None) -> str:
+    op = op or {}
     texto = ((g.get("titulos") or {}).get("tiktok") or g["ganchos"][g["gancho_elegido"]]).strip()
     tags = " ".join(g.get("hashtags") or []) or HASHTAGS_TIKTOK
     return (f"TEXTO PARA TIKTOK (copiar y pegar)\n\n{texto} {tags}\n\n"
             f"COMENTARIO FIJADO\n{g.get('cierre') or '¿Tú qué opinas? Te leo 👇'}\n\n"
-            f"ANTES DE PUBLICAR\n- Activa «Contenido generado por IA» (voces sintéticas).\n- Mejor hora: {HORA}.\n\n"
-            f"FUENTES (para responder dudas)\n{_fuentes_txt(g)}\n")
+            f"ANTES DE PUBLICAR\n{_ia_paso(op, 'tiktok')}\n- Mejor hora: {HORA}.\n\n"
+            f"FUENTES (para responder dudas)\n{_fuentes_txt(g)}\n\n{_creditos_txt(op)}")
 
 
-def _txt_shorts(g: dict) -> str:
+def _txt_shorts(g: dict, op: dict | None = None) -> str:
+    op = op or {}
     titulo = ((g.get("titulos") or {}).get("shorts") or g.get("titulo") or "").strip()
     if "gta 6" not in titulo.lower() and "gta vi" not in titulo.lower():
         titulo = f"GTA 6: {titulo}"
     titulo = titulo[:90] + ("" if "#shorts" in titulo.lower() else " #Shorts")
     return (f"TÍTULO\n{titulo}\n\nDESCRIPCIÓN\n{(g.get('descripcion') or g.get('titulo') or '').strip()}\n\n"
-            f"Fuentes:\n{_fuentes_txt(g)}\n\n{AVISO}\n\n#GTA6 #Shorts\n\n"
+            f"Fuentes:\n{_fuentes_txt(g)}\n\n{_creditos_txt(op)}{_aviso(op)}\n\n#GTA6 #Shorts\n\n"
             f"COMENTARIO FIJADO\n{g.get('cierre') or '¿Tú qué opinas?'}\n\n"
-            f"ANTES DE PUBLICAR\n- Marca «Contenido alterado o sintético» en YouTube Studio.\n- Mejor hora: {HORA}.\n")
+            f"ANTES DE PUBLICAR\n{_ia_paso(op, 'shorts')}\n- Mejor hora: {HORA}.\n")
 
 
 def _siguiente_nn(dia: Path) -> int:
@@ -117,12 +139,15 @@ def exportar(con, tid: str) -> dict:
                 archivos[f"{nombre}_portada.jpg"] = Path(v["portada_ruta"])
             for dst, src in archivos.items():
                 shutil.copy2(src, sub / dst)
-            (sub / f"{nombre}.txt").write_text(_txt_tiktok(g) if pl == "tiktok" else _txt_shorts(g), encoding="utf-8")
+            op = v.get("opciones") or {}
+            (sub / f"{nombre}.txt").write_text(_txt_tiktok(g, op) if pl == "tiktok" else _txt_shorts(g, op), encoding="utf-8")
             hashes = {f: sha256(sub / f) for f in [*archivos, f"{nombre}.txt"]}
             manifiesto = {
                 "pieza": tid, "version": v["n"], "plataforma": pl, "guion_hash": v["guion_hash"],
                 "exportado_en": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "archivos": hashes, "fuentes": fuentes(g),
+                "voz": op.get("voz", "sintetica"), "fondo": op.get("fondo_usado", op.get("fondo", "grafico")),
+                "materiales": op.get("creditos", []),
                 "aprobaciones": {k: {"version": a["version_n"], "guion_hash": a["guion_hash"], "fecha": a["creada_en"]}
                                  for k, a in ap.items()},
                 "publicado": False,

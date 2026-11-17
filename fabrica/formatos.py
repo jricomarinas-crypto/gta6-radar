@@ -10,6 +10,7 @@ y por encima de y≈1450 (abajo va el texto de la publicación).
 from __future__ import annotations
 
 from datetime import datetime
+import subprocess
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -52,7 +53,11 @@ def _cabecera(img, guion: dict, titular: str | None = None) -> None:
         y += int(text_h(f) * 0.98)
 
 
-def _hablante(img, speaker: str) -> None:
+def _hablante(img, speaker: str, voz: str | None = None) -> None:
+    if voz == "propia":  # narración de Javier: rótulo neutro, sin Leo ni Sofi
+        pill(img, (X0, 1215), f"{cfg()['canal']['nombre']} · NARRACIÓN", font(F_BOLD, 28), (255, 255, 255, 255),
+             rgb(PINK, 200), pad=(18, 9))
+        return
     host = {h["id"]: h for h in cfg()["podcast"]["presentadores"]}[speaker]
     pill(img, (X0, 1215), f"{host['nombre'].upper()} · {host['rol']}", font(F_BOLD, 28), (255, 255, 255, 255),
          rgb(host["color"], 200), pad=(18, 9))
@@ -192,9 +197,29 @@ def _guia(img, guion: dict, activo: int | None) -> None:
 
 
 # ------------------------------------------------------------------ fotograma y montaje
+_VELO = None
+
+
+def _velo() -> Image.Image:
+    """Degradado oscuro arriba y abajo para leer los textos sobre cualquier vídeo de fondo."""
+    global _VELO
+    if _VELO is None:
+        _VELO = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+        d = ImageDraw.Draw(_VELO)
+        for y in range(H):
+            if y < 700:
+                a = int(200 - 120 * y / 700)
+            elif y > 1150:
+                a = int(70 + 150 * (y - 1150) / (H - 1150))
+            else:
+                a = 70
+            d.line([(0, y), (W, y)], fill=(5, 5, 12, a))
+    return _VELO.copy()
+
+
 def fotograma(guion: dict, speaker: str, item: int | None = None, revelado: bool = False,
-              titular: str | None = None) -> Image.Image:
-    img = _fondo()
+              titular: str | None = None, transparente: bool = False) -> Image.Image:
+    img = _velo() if transparente else _fondo()
     _cabecera(img, guion, titular)
     f = guion["formato"]
     if f == "lista_pais":
@@ -207,8 +232,8 @@ def fotograma(guion: dict, speaker: str, item: int | None = None, revelado: bool
         _guia(img, guion, item)
     else:
         _ultima_hora(img, guion)
-    _hablante(img, speaker)
-    return img.convert("RGB")
+    _hablante(img, speaker, guion.get("voz"))
+    return img if transparente else img.convert("RGB")
 
 
 def _srt_tiempo(t: float) -> str:
@@ -238,10 +263,13 @@ def _revela_desde(guion: dict) -> int:
     return len(lineas) // 2
 
 
-def montar(guion: dict, lines: list[dict], audio: Path, total: float, workdir: Path) -> tuple[Path, Path]:
-    """lines: las de tts.build_timeline (en el mismo orden que guion['lineas']). Devuelve (vídeo, portada)."""
+def montar(guion: dict, lines: list[dict], audio: Path, total: float, workdir: Path,
+           clips: list[Path] | None = None) -> tuple[Path, Path]:
+    """lines: las de tts.build_timeline (mismo orden que guion['lineas']). Devuelve (vídeo, portada).
+    clips: vídeos de fondo (uno por línea). Sin clips → fondo gráfico de siempre."""
     workdir.mkdir(parents=True, exist_ok=True)
     revela = _revela_desde(guion)
+    transparente = bool(clips)
     cache, items, prev = {}, [], 0.0
     for i, ln in enumerate(lines):
         src = guion["lineas"][i]
@@ -250,16 +278,25 @@ def montar(guion: dict, lines: list[dict], audio: Path, total: float, workdir: P
         key = (ln["speaker"], item, i >= revela, titular)
         if key not in cache:
             p = workdir / f"f{len(cache):02d}.png"
-            fotograma(guion, ln["speaker"], item, i >= revela, titular).save(p)
+            fotograma(guion, ln["speaker"], item, i >= revela, titular, transparente).save(p)
             cache[key] = p
         end = lines[i + 1]["start"] if i + 1 < len(lines) else total
         items.append((cache[key], end - prev))
         prev = end
-    portada = workdir / "portada.jpg"
-    fotograma(guion, lines[0]["speaker"], None, False).save(portada, quality=92)
+    fondo = None
+    if clips:
+        from . import broll
+        fondo = broll.preparar_fondo([clips[i % len(clips)] for i in range(len(items))], [d for _, d in items],
+                                     workdir / "fondo.mp4")
     ass = render.write_ass(lines, workdir / "subs.ass", W, H, 78, 480, 100, 3, True)
     lufs = float(cfg().get("fabrica", {}).get("volumen_lufs", -14))
     out = workdir / "video.mp4"
     bar = {"verdad_bulo": GOLD, "ultima_hora": RED, "comparacion": GOLD, "guia": PINK}.get(guion["formato"], CYAN)
-    render.ffmpeg_compose(items, audio, ass, out, W, H, WAVE, total, bar_color=bar, fade=True, lufs=lufs)
+    render.ffmpeg_compose(items, audio, ass, out, W, H, WAVE, total, bar_color=bar, fade=True, lufs=lufs, fondo=fondo)
+    portada = workdir / "portada.jpg"
+    if fondo:  # portada = un fotograma real del vídeo (fondo de Miami + tarjeta), no un gráfico aparte
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-ss", "0.8", "-i", str(out), "-frames:v", "1", "-q:v", "3",
+                        str(portada)], check=True)
+    else:
+        fotograma(guion, lines[0]["speaker"], None, False).save(portada, quality=92)
     return out, portada

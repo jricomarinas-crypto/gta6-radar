@@ -50,8 +50,10 @@ def voz_caida(lines, hosts, workdir):
     raise ConnectionError("proveedor de voz caído (simulado)")
 
 
-def nueva_pieza(con, titulo="Pieza de prueba del corte 1") -> dict:
-    return flujo.enviar_al_estudio(con, flujo.idea_a_mano(titulo, "prueba"), "guia", ["tiktok", "shorts"])
+def nueva_pieza(con, titulo="Pieza de prueba del corte 1", fondo="grafico", voz="sintetica") -> dict:
+    t = flujo.enviar_al_estudio(con, flujo.idea_a_mano(titulo, "prueba"), "guia", ["tiktok", "shorts"])
+    flujo.poner_opciones(con, t["id"], fondo, voz)
+    return db.trabajo(con, t["id"])
 
 
 def poner_guion(t: dict, g: dict | None = None) -> Path:
@@ -169,6 +171,7 @@ class Corte1(unittest.TestCase):
         a = flujo.enviar_al_estudio(con, idea, "guia", ["tiktok"])
         b = flujo.enviar_al_estudio(con, idea, "guia", ["tiktok"])
         self.assertEqual(a["id"], b["id"])
+        flujo.poner_opciones(con, a["id"], "grafico", "sintetica")
         flujo.aprobar(con, a["id"], "idea")
         poner_guion(a)
         flujo.aprobar(con, a["id"], "guion")

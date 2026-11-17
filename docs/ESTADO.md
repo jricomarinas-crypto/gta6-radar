@@ -3,6 +3,32 @@
 Última actualización: 16-nov-2026 (Claude Code). Documentos: `docs/megaprompt-claude-code.md` (manda),
 `docs/principios-producto.md`, `docs/plan-v2.md` (reconstruido del PDF; la versión anterior se sobrescribió por error).
 
+## Novedades del 17-nov-2026
+
+### Vídeo real de fondo + tu voz — HECHO Y PROBADO (con clips y tomas simulados)
+- Por pieza se elige **fondo** (vídeo real | gráfico) y **voz** (la tuya | Leo y Sofi). Por defecto: vídeo real + tu voz.
+- Fondo: Pexels (`PEXELS_API_KEY` en `.env`) o clips propios en `assets/broll/`; filtro que excluye «GTA», «Rockstar»,
+  «gameplay»…; créditos (autor, URL, licencia) en el manifiesto y en los textos. Sin clave ni clips → fondo gráfico y
+  se explica el motivo en la revisión.
+- Tu voz: grabación por escena desde el navegador (micrófono), con Escuchar y Repetir; cada toma va ligada al texto exacto.
+  «Crear vídeo» solo aparece con todas las tomas válidas. Regrabar, cambiar el texto, el fondo o la voz anula la
+  aprobación del vídeo (clave de render por versión).
+- Aviso de contenido sintético según la voz (`exportar.py`); `upload.py` acepta `sintetico=`.
+- Pruebas: `tests/test_broll_voz.py` (5) + corte 1 (8) = 13 en verde. Recorrido en navegador: tomas subidas por la
+  misma ruta que el micrófono, vídeo creado y revisado.
+- **No probado todavía:** descarga real de Pexels (falta la clave de Javier) y grabación real con micrófono (la hace Javier).
+- Limitación: con tu voz, los tiempos de los subtítulos son proporcionales dentro de cada toma (aproximados).
+
+### Rediseño del panel — fase 1 A MEDIAS
+- Hecho (`06100ae`): `radar/diario.py` (resumen diario del Radar, null ≠ 0) y eventos de producción en el Estudio
+  (`estudio/series.py`), migración v3 con eventos reconstruidos marcados.
+- Pendiente: dividir el panel en archivos, barra lateral, Hoy con 3 gráficas, demo de 90 días, verificación.
+
+### Documentos
+- `README.md` sustituido por la versión de Javier, ampliada con Estudio, modo suscripción, fondo real y tu voz.
+- `docs/megaprompt-2.0.md` guardado; sus choques con lo construido están en su cabecera (carpeta por pieza vs. por día,
+  lista de estados, costes). Pendiente: la respuesta completa que pide su apartado 20.
+
 ## Corte 1 (H1 + H2) — criterios de aceptación del megaprompt §14
 
 | Criterio | Estado | Cómo se comprobó |

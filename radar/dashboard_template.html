@@ -582,7 +582,7 @@ $('#csv').addEventListener('click', () => {
   document.body.append(a); a.click(); a.remove();
 });
 // ---------- estudio (solo aparece si el panel lo sirve el Estudio: python -m estudio)
-const FAB = {variantes: {}, plataformas: {}, ultimo: '', abiertos: new Set()};
+const FAB = {variantes: {}, plataformas: {}, ultimo: '', abiertos: new Set(), grabando: null};
 const ETAPAS = ['Brief', 'Guion', 'Montaje', 'Revisión', 'Exportación'];
 async function api(path, body) {
   const r = await fetch(path, body ? {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)} : {});
@@ -667,9 +667,11 @@ function piezaCard(p) {
   }
   if ((p.guion.avisos || []).length) c.append(el('div', {class: 'am', text: 'Avisos: ' + p.guion.avisos.join(' · ')}));
   if (p.guion.estado === 'valido') guionDetalle(p, c);
+  if (p.aprobado.guion && ['Montaje', 'Revisión'].includes(p.etapa)) c.append(opcionesPieza(p));
   if (p.etapa === 'Montaje') {
-    const enMarcha = v && ['pendiente', 'en_curso'].includes(v.estado_produccion) && v.guion_hash === p.guion.hash;
-    if (!enMarcha && !(v && v.estado_produccion === 'fallido' && v.guion_hash === p.guion.hash))
+    const enMarcha = v && ['pendiente', 'en_curso'].includes(v.estado_produccion) && v.clave === p.clave;
+    const faltanTomas = (p.opciones || {}).voz === 'propia' && (p.tomas || []).some(x => !x.valida);
+    if (!enMarcha && !faltanTomas && !(v && v.estado_produccion === 'fallido' && v.clave === p.clave))
       acciones.append(boton('Crear vídeo', () => api(`/api/piezas/${p.id}/crear`, {}), true));
     if (v && v.estado_produccion === 'fallido') acciones.append(boton(`Reintentar (${v.intentos}/3)`, () => api(`/api/piezas/${p.id}/reintentar`, {}), true));
     if (v && v.estado_produccion === 'pendiente') acciones.append(boton('Cancelar', () => api(`/api/piezas/${p.id}/cancelar`, {})));
@@ -679,6 +681,8 @@ function piezaCard(p) {
     c.append(el('div', {class: 'rev'},
       el('video', {src: `/media/${v.id}.mp4`, controls: '', preload: 'metadata', playsinline: ''}),
       el('div', {}, el('div', {class: 'am', text: `Versión ${v.n} · ${Math.round(v.duracion || 0)} s`}),
+        el('div', {class: 'am', text: `Voz: ${(v.opciones || {}).voz === 'propia' ? 'la tuya' : 'Leo y Sofi (sintética)'} · Fondo: ${
+          (v.opciones || {}).fondo_usado === 'video' ? 'vídeo real' : 'gráfico'}${(v.opciones || {}).fondo_motivo && (v.opciones || {}).fondo_usado !== 'video' ? ' (' + v.opciones.fondo_motivo + ')' : ''}`}),
         ...Object.entries(q).map(([pl, r]) => el('div', {class: 'am'}, `${FAB.plataformas[pl] || pl}: `,
           el('span', {class: r.ok ? 'ok' : 'bad', text: r.ok ? '✓ control de calidad' : '✗ ' + r.fallos.join(' · ')}))),
         ...p.cambios.filter(x => x.version_n).map(x => el('div', {class: 'am', text: `Cambios pedidos (v${x.version_n}): ${x.nota}`})))));
@@ -703,7 +707,56 @@ function piezaCard(p) {
   c.append(acciones);
   return c;
 }
+function opcionesPieza(p) {
+  const op = p.opciones || {};
+  const sel = (nombre, valor, opciones) => { const s = el('select', {'aria-label': nombre},
+      ...opciones.map(([v, t]) => el('option', {value: v, text: t}))); s.value = valor;
+    s.addEventListener('change', async () => { try { await api(`/api/piezas/${p.id}/opciones`, {[nombre]: s.value}); }
+      catch (e) { alert(e.message); } await fabPiezas(true); }); return s; };
+  const caja = el('div', {class: 'fab-idea', style: 'margin:8px 0'},
+    el('div', {class: 'row'}, el('label', {class: 'am'}, 'Fondo ', sel('fondo', op.fondo, [['video', 'Vídeo real (Miami / Florida)'], ['grafico', 'Gráfico']])),
+      el('label', {class: 'am'}, 'Voz ', sel('voz', op.voz, [['propia', 'La mía (grabar)'], ['sintetica', 'Leo y Sofi (sintética)']]))));
+  if (op.voz === 'propia' && (p.tomas || []).length) {
+    const hechas = p.tomas.filter(x => x.valida).length;
+    caja.append(el('div', {class: 'am', text: `Tu voz: ${hechas} de ${p.tomas.length} escenas grabadas. Lee el texto tal cual, con naturalidad; puedes repetir cada una.`}));
+    p.tomas.forEach(x => {
+      const grab = el('button', {class: 'btn' + (x.valida ? '' : ' pri'), type: 'button', text: x.valida ? 'Repetir' : '● Grabar'});
+      grab.addEventListener('click', () => grabarToma(p.id, x.escena, grab));
+      const oir = x.grabada ? el('button', {class: 'btn', type: 'button', text: '▶ Escuchar'}) : null;
+      if (oir) oir.addEventListener('click', () => new Audio(`/media/toma/${p.id}/${x.escena}.wav?${Date.now()}`).play());
+      caja.append(el('div', {class: 'esc'},
+        el('span', {class: 'who', text: `${x.escena + 1}.`}), x.texto,
+        el('div', {class: 'row', style: 'margin-top:4px'}, grab, oir,
+          el('span', {class: x.valida ? 'ok am' : 'am', text: x.valida ? `✓ ${x.duracion} s` : (x.aviso || 'Sin grabar')}))));
+    });
+  }
+  return caja;
+}
+async function grabarToma(id, n, boton) {
+  if (FAB.grabando) {  // segundo clic: parar
+    if (FAB.grabando.boton === boton) FAB.grabando.rec.stop();
+    return;
+  }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  catch { alert('No hay permiso para usar el micrófono. Permítelo en el navegador y vuelve a intentarlo.'); return; }
+  const rec = new MediaRecorder(stream); const trozos = [];
+  rec.ondataavailable = e => e.data.size && trozos.push(e.data);
+  rec.onstop = async () => {
+    stream.getTracks().forEach(tr => tr.stop());
+    const blob = new Blob(trozos, {type: rec.mimeType || 'audio/webm'});
+    boton.textContent = 'Guardando…';
+    try {
+      const r = await fetch(`/api/piezas/${id}/voz/${n}`, {method: 'POST', headers: {'Content-Type': blob.type}, body: blob});
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+    } catch (e) { alert(e.message); }
+    FAB.grabando = null; await fabPiezas(true);
+  };
+  FAB.grabando = {rec, boton}; rec.start(); boton.textContent = '■ Parar'; boton.classList.add('pri');
+}
 async function fabPiezas(forzar) {
+  if (FAB.grabando && !forzar) return;  // no repintar mientras grabas
   const d = await api('/api/piezas');
   const firma = JSON.stringify(d.piezas);
   if (!forzar && firma === FAB.ultimo) return;   // no repintar si nada cambió (no corta el vídeo)

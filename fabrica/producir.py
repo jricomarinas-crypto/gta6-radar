@@ -13,7 +13,7 @@ import shutil
 from estudio import db, rutas
 from podcast import script, tts
 
-from . import calidad, formatos, voces
+from . import broll, calidad, formatos, voces, voz_propia
 from .guion import plano
 
 
@@ -32,14 +32,26 @@ def render_version(con, vid: str) -> dict:
         shutil.rmtree(work)
     work.mkdir(parents=True)
 
+    op = v.get("opciones") or {"fondo": "grafico", "voz": "sintetica"}
+    p["voz"] = op.get("voz")
     db.actualizar_version(con, vid, estado_produccion="en_curso", etapa="Voces", error=None)
     ep = {"segmentos": [{"lineas": [{"habla": ln["habla"], "texto": ln["texto"]} for ln in p["lineas"]]}]}
-    lines = voces.sintetizar(script.flatten(ep), base / "voces")
+    if op.get("voz") == "propia":
+        lines = voces.desde_tomas(script.flatten(ep), voz_propia.rutas_validas(con, t["id"], g["escenas"]))
+    else:
+        lines = voces.sintetizar(script.flatten(ep), base / "voces")
+    clips = []
+    if op.get("fondo") == "video":
+        db.actualizar_version(con, vid, etapa="Vídeo de fondo")
+        clips, motivo = broll.elegir(len(lines), vid, [e.get("broll") for e in g["escenas"]])
+        op = {**op, "fondo_usado": "video" if clips else "grafico", "fondo_motivo": motivo,
+              "creditos": [broll.credito(c) for c in dict.fromkeys(clips)]}
+        db.actualizar_version(con, vid, opciones=op)
 
     db.actualizar_version(con, vid, etapa="Montaje")
     try:
         lines, total = tts.build_timeline(lines, work / "audio.wav")
-        video, portada = formatos.montar(p, lines, work / "audio.wav", total, work / "render")
+        video, portada = formatos.montar(p, lines, work / "audio.wav", total, work / "render", clips=clips)
         srt = formatos.escribir_srt(lines, work / "subtitulos.srt")
         destino = work / "video.mp4"
         shutil.move(video, destino)

@@ -113,6 +113,13 @@ class Handler(BaseHTTPRequestHandler):
                 gi = flujo.leer_guion(db.trabajo(con, m.group(1)))
                 st["guion"]["contenido"] = gi.get("guion")
                 return self._json(st)
+            m = re.match(r"^/media/toma/([0-9a-f]{6})/(\d{1,2})\.wav$", path)
+            if m:
+                fila = db.connect().execute("SELECT ruta FROM tomas WHERE trabajo_id=? AND escena=?",
+                                            (m.group(1), int(m.group(2)))).fetchone()
+                if not fila or not Path(fila["ruta"]).exists():
+                    return self._json({"error": "Toma no disponible"}, 404)
+                return self._send(200, Path(fila["ruta"]).read_bytes(), "audio/wav")
             m = re.match(r"^/media/([0-9a-f]{6}-v\d{1,3})\.mp4$", path)
             if m:
                 return self._media(m.group(1))
@@ -124,8 +131,20 @@ class Handler(BaseHTTPRequestHandler):
 
     # ---------------------------------------------------------- POST
     def do_POST(self):
-        path, body = self.path.split("?")[0], self._body()
+        path = self.path.split("?")[0]
         con = db.connect()
+        m = re.match(r"^/api/piezas/([0-9a-f]{6})/voz/(\d{1,2})$", path)
+        if m:  # toma de voz: audio crudo del micrófono (no JSON)
+            n = int(self.headers.get("Content-Length") or 0)
+            if n <= 0 or n > 25 * 1024 * 1024:
+                return self._json({"error": "La grabación está vacía o es demasiado grande (máx. 25 MB)."}, 413)
+            datos = self.rfile.read(n)
+            try:
+                return self._json(flujo.guardar_toma(con, m.group(1), int(m.group(2)), datos,
+                                                     self.headers.get("Content-Type", "")))
+            except flujo.Bloqueado as e:
+                return self._json({"error": str(e)}, 409)
+        body = self._body()
         try:
             if path == "/api/enviar":
                 if body.get("a_mano"):
@@ -155,10 +174,12 @@ class Handler(BaseHTTPRequestHandler):
                 destino.mkdir(parents=True, exist_ok=True)
                 subprocess.run(["open", str(destino)], check=False)
                 return self._json({"ok": True})
-            m = re.match(r"^/api/piezas/([0-9a-f]{6})/(aprobar|cambios|crear|reintentar|cancelar|exportar|subido|descartar)$", path)
+            m = re.match(r"^/api/piezas/([0-9a-f]{6})/(aprobar|cambios|crear|reintentar|cancelar|exportar|subido|descartar|opciones)$", path)
             if not m:
                 return self._json({"error": "No encontrado"}, 404)
             tid, accion = m.groups()
+            if accion == "opciones":
+                return self._json(flujo.poner_opciones(con, tid, body.get("fondo"), body.get("voz")))
             if accion == "aprobar":
                 return self._json(flujo.aprobar(con, tid, str(body.get("tipo", ""))))
             if accion == "cambios":

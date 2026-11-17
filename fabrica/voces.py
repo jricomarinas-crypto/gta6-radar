@@ -26,6 +26,17 @@ def _clave(linea: dict, host: dict) -> str:
     return hashlib.sha1(base.encode()).hexdigest()[:16]
 
 
+def desde_tomas(lineas: list[dict], tomas: list[Path]) -> list[dict]:
+    """Tu voz: una toma WAV por línea. Tiempos por palabra repartidos de forma proporcional (aproximados)."""
+    import wave
+    out = []
+    for ln, wav in zip(lineas, tomas):
+        with wave.open(str(wav)) as w:
+            dur = w.getnframes() / w.getframerate()
+        out.append({**ln, "wav": str(wav), "duration": dur, "words": tts._align(ln["text"], [], dur)})
+    return out
+
+
 def sintetizar(lineas: list[dict], cache: Path) -> list[dict]:
     """lineas: [{seg, speaker, text}] → las mismas con wav, duration y words (como podcast.tts.synthesize)."""
     hosts = {h["id"]: h for h in cfg()["podcast"]["presentadores"]}

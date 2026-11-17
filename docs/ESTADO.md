@@ -122,6 +122,22 @@
 - Probado: `tests/test_fase3.py` (4) + 34 = 38 en verde; navegador: Google News real (40 resultados), seguimiento,
   Revisión, Calendario (escritorio y móvil), diálogo, chips, atajos; consola sin errores.
 
+### Versión de lanzamiento: web real y rediseño — HECHO (17-nov)
+- **Web real**: la base del Radar cuenta como real si tiene ejecuciones o noticias (antes exigía vídeos). Datos
+  descargados hoy: 719 noticias reales, 0 vídeos → aviso honesto «falta YOUTUBE_API_KEY en GitHub Secrets».
+- **Modo lanzamiento**: cuenta atrás hasta el 19-nov; desde ese día «Día N» y, la primera semana, bloque en Hoy con
+  las noticias y los vídeos que más crecen desde el lanzamiento.
+- **Rediseño** (`radar/panel/marca.css`, va la última): identidad «Punto de Control» (noche + atardecer
+  naranja→rosa→violeta, sin nada de Rockstar), Inter incrustada en el HTML (WOFF2 reducidos, 67 KB, licencia OFL
+  en `radar/panel/fuentes/LICENCIA.txt`, sin CDN), iconos SVG propios, tarjetas, botones, cabecera con cristal,
+  degradado bajo las líneas de las gráficas (solo en tramos con datos), h1 por vista. Contrastes AA medidos
+  (texto secundario 4,9–7,8:1). Sin scroll horizontal en móvil en 6 vistas. Arreglado: el bloque negro de la
+  gráfica de Estadísticas.
+- **GitHub**: «Shorts diarios» y «Podcast diario» fallan porque GitHub tiene el código antiguo (sin `ia.modo`);
+  las protecciones ya están en los commits locales: se arregla al hacer push (pendiente del OK de Javier).
+- Probado: `tests/test_lanzamiento.py` (2) + 38 = 40 en verde.
+- Pendiente: vídeos con gameplay propio y montaje profesional (propuesto como sesión aparte).
+
 ### Pendiente
 - Lo que pide Javier en megaprompt 2.0 (choques en su cabecera) y conectar YouTube Analytics (con su OK).
 

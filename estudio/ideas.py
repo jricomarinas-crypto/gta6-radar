@@ -44,11 +44,12 @@ def slug(texto: str, n: int = 40) -> str:
 
 
 def radar_db() -> sqlite3.Connection:
-    """La base de datos real del Radar si tiene vídeos; si no, la de demostración (marcada como demo)."""
+    """La base de datos real del Radar si tiene datos (alguna ejecución, noticia o vídeo); si no, la demo (marcada).
+    Sin vídeos (falta YOUTUBE_API_KEY) sigue siendo real: el panel lo avisa en vez de enseñar datos inventados."""
     real = DATA_DIR / "radar.db"
     if real.exists():
         con = radar_connect(real)
-        if con.execute("SELECT COUNT(*) FROM videos").fetchone()[0] > 0:
+        if any(con.execute(f"SELECT 1 FROM {t} LIMIT 1").fetchone() for t in ("videos", "news", "runs")):
             return con
         con.close()
     demo = DATA_DIR / "demo.db"

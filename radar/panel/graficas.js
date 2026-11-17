@@ -45,6 +45,20 @@ const Grafica = (() => {
     cfg.fechas.forEach((f, i) => {
       if ((n - 1 - i) % cada === 0) { const t = svgEl('text', {x: x(i), y: H - 8, 'text-anchor': i === n - 1 ? 'end' : i === 0 ? 'start' : 'middle'}); t.textContent = fechaCorta(f); svg.append(t); }
     });
+    // degradado suave bajo cada línea (solo en tramos con datos: los huecos siguen vacíos, nunca se rellenan)
+    const defs = svgEl('defs', {}); svg.append(defs);
+    vis.forEach((s, k) => {
+      const gid = `g-${Math.random().toString(36).slice(2, 8)}-${k}`; s._grad = gid;
+      const g = svgEl('linearGradient', {id: gid, x1: 0, y1: 0, x2: 0, y2: 1});
+      g.append(svgEl('stop', {offset: '0%', 'stop-color': s.color, 'stop-opacity': vis.length > 1 ? .14 : .28}),
+        svgEl('stop', {offset: '100%', 'stop-color': s.color, 'stop-opacity': 0}));
+      defs.append(g);
+      let tramo = [];
+      const cerrar = () => { if (tramo.length > 1) svg.append(svgEl('path', {class: 'area', fill: `url(#${gid})`,
+        d: `M${x(tramo[0][0]).toFixed(1)},${y(0).toFixed(1)}` + tramo.map(([i, v]) => `L${x(i).toFixed(1)},${y(v).toFixed(1)}`).join('') + `L${x(tramo[tramo.length - 1][0]).toFixed(1)},${y(0).toFixed(1)}Z`})); tramo = []; };
+      s.valores.forEach((v, i) => { if (v == null || !isFinite(v)) cerrar(); else tramo.push([i, v]); });
+      cerrar();
+    });
     for (const s of vis) {
       let d = '', abierto = false;
       s.valores.forEach((v, i) => {

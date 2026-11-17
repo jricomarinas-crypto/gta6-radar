@@ -1,15 +1,28 @@
 // ===== Navegación lateral, rutas (#/grupo/seccion), estado de los datos y vistas de Sistema =====
 // Las secciones aún no construidas se muestran como «pronto» (no son enlaces): ningún control aparenta funcionar.
+// Iconos propios (trazo 1.8, 24×24). Texto fijo del propio panel: se pueden insertar como SVG.
+const ICONOS = {
+  inicio: '<path d="M4 11.5 12 5l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/>',
+  investigar: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  canal: '<rect x="3.5" y="5" width="17" height="12.5" rx="2.5"/><path d="m10.5 9 4 2.3-4 2.3z"/><path d="M8 21h8"/>',
+  crear: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  sistema: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+};
+function icono(trazos) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.setAttribute('class', 'ico-svg');
+  s.innerHTML = trazos; return s;
+}
 const MENU = [
-  {id: 'inicio', ico: '⌂', t: 'Inicio', items: [['hoy', 'Hoy'], ['alertas', 'Alertas'], ['continuar', 'Continuar investigando']]},
-  {id: 'investigar', ico: '⌕', t: 'Investigar', items: [['buscador', 'Buscador'], ['noticias', 'Noticias y fuentes'],
+  {id: 'inicio', ico: ICONOS.inicio, t: 'Inicio', items: [['hoy', 'Hoy'], ['alertas', 'Alertas'], ['continuar', 'Continuar investigando']]},
+  {id: 'investigar', ico: ICONOS.investigar, t: 'Investigar', items: [['buscador', 'Buscador'], ['noticias', 'Noticias y fuentes'],
     ['videos', 'Vídeos'], ['temas', 'Temas y tendencias'], ['rumores', 'Rumores y verificación'], ['creadores', 'Creadores y canales'],
     ['cronologia', 'Cronología'], ['investigaciones', 'Mis investigaciones'], ['biblioteca', 'Biblioteca de referencias']]},
-  {id: 'canal', ico: '▤', t: 'Mi canal', items: [['estadisticas', 'Estadísticas'], ['rinde', 'Lo que más rinde'],
+  {id: 'canal', ico: ICONOS.canal, t: 'Mi canal', items: [['estadisticas', 'Estadísticas'], ['rinde', 'Lo que más rinde'],
     ['mis-videos', 'Mis vídeos'], ['colaboradores', 'Colaboradores']]},
-  {id: 'crear', ico: '✚', t: 'Crear', items: [['ideas', 'Fábrica de ideas'], ['guiones', 'Guiones y dossiers'],
+  {id: 'crear', ico: ICONOS.crear, t: 'Crear', items: [['ideas', 'Fábrica de ideas'], ['guiones', 'Guiones y dossiers'],
     ['produccion', 'En producción'], ['revision', 'Revisión'], ['calendario', 'Calendario'], ['episodios', 'Episodios y archivos']]},
-  {id: 'sistema', ico: '⚙', t: 'Sistema', items: [['fuentes', 'Fuentes vigiladas'], ['ejecuciones', 'Automatizaciones y ejecuciones'],
+  {id: 'sistema', ico: ICONOS.sistema, t: 'Sistema', items: [['fuentes', 'Fuentes vigiladas'], ['ejecuciones', 'Automatizaciones y ejecuciones'],
     ['configuracion', 'Configuración']]},
 ];
 const RUTA_INICIAL = 'inicio/hoy';
@@ -36,7 +49,7 @@ function construirMenu() {
       fase ? el('span', {class: 'pronto', title: `Llega en la fase ${fase}`}, t, el('small', {text: 'fase ' + fase}))
            : el('a', {href: `#/${g.id}/${id}`, 'data-ruta': `${g.id}/${id}`, text: t}))));
     const boton = el('button', {type: 'button', 'aria-expanded': abierto ? 'true' : 'false', 'aria-controls': 'grupo-' + g.id, title: g.t},
-      el('span', {class: 'ico', 'aria-hidden': 'true', text: g.ico}), el('span', {class: 'txt', text: g.t}), el('span', {class: 'fl', 'aria-hidden': 'true', text: '›'}));
+      el('span', {class: 'ico', 'aria-hidden': 'true'}, icono(g.ico)), el('span', {class: 'txt', text: g.t}), el('span', {class: 'fl', 'aria-hidden': 'true', text: '›'}));
     boton.addEventListener('click', () => {
       if (document.body.classList.contains('nav-contraida')) { contraer(false); abrirGrupo(g.id, true); return; }
       abrirGrupo(g.id, boton.getAttribute('aria-expanded') !== 'true');
@@ -91,8 +104,8 @@ function mostrarVista() {
   const [g, s] = ruta.split('/');
   const grupo = MENU.find(x => x.id === g), item = grupo.items.find(i => i[0] === s);
   if ($('#grupo-' + g).hidden) abrirGrupo(g, true);
-  $('#migas').replaceChildren(grupo.t, ' › ', el('b', {text: item[1]}));
-  document.title = `${item[1]} · GTA VI Radar`;
+  $('#migas').replaceChildren(el('span', {class: 'migas-grupo', text: grupo.t + ' ›'}), el('h1', {class: 'vista-titulo', text: item[1]}));
+  document.title = `${item[1]} · Punto de Control`;
   window.dispatchEvent(new CustomEvent('vista', {detail: ruta}));
 }
 

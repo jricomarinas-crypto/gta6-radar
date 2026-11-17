@@ -179,6 +179,25 @@ const Hoy = (() => {
     return el('div', {class: 'resumen', 'aria-label': 'Resumen'}, ...t);
   }
 
+  // ---------- Lanzamiento: bloque «Primeras horas» durante la primera semana tras canal.lanzamiento
+  function lanzamiento() {
+    if (!DATA.release_date) return null;
+    const ini = new Date(DATA.release_date + 'T00:00:00'), dias = (Date.now() - ini) / 864e5;
+    if (dias < 0 || dias > 7) return null;
+    const desde = v => v && new Date(v) >= ini;
+    const noticias = (DATA.news || []).filter(n => desde(n.published_at)).slice(0, 6);
+    const vids = (DATA.videos || []).filter(v => desde(v.published_at)).sort((a, b) => (b.velocity || 0) - (a.velocity || 0)).slice(0, 6);
+    const lista = (xs, f) => xs.length ? el('ul', {class: 'lanz-lista'}, ...xs.map(f)) : el('p', {class: 'am', text: 'Nada todavía en lo que ha recopilado el Radar.'});
+    return el('section', {class: 'card lanz', 'aria-labelledby': 'lanz-t'},
+      el('div', {class: 'lanz-cab'}, el('span', {class: 'lanz-dia', text: `Día ${Math.floor(dias) + 1}`}),
+        el('h2', {id: 'lanz-t', text: 'GTA VI ya está aquí · lo primero que hay que contar'})),
+      el('div', {class: 'grid2'},
+        el('div', {}, el('h3', {text: 'Noticias desde el lanzamiento'}), lista(noticias, n => el('li', {}, safeUrl(n.url) ? el('a', {href: safeUrl(n.url), target: '_blank', rel: 'noopener', text: n.title}) : n.title,
+          el('span', {class: 'am', text: ` · ${n.source || '—'} · ${ago(n.published_at)}`})))),
+        el('div', {}, el('h3', {text: 'Vídeos que más crecen'}), lista(vids, v => el('li', {}, safeUrl(v.url) ? el('a', {href: safeUrl(v.url), target: '_blank', rel: 'noopener', text: v.title}) : v.title,
+          el('span', {class: 'am', text: ` · ${fmt(v.velocity)} vistas/h · ${v.channel || '—'}`}))))));
+  }
+
   function pintar() {
     const periodo = el('div', {class: 'seg', role: 'group', 'aria-label': 'Periodo'}, ...[7, 30, 90].map(d => {
       const b = el('button', {type: 'button', 'aria-pressed': d === st.periodo ? 'true' : 'false', text: d + ' días'});
@@ -186,7 +205,7 @@ const Hoy = (() => {
       return b;
     }));
     $('#hoy').replaceChildren(el('div', {class: 'hoy-cab'}, el('h2', {text: 'Últimos días'}), periodo,
-      el('span', {class: 'am', text: `Días en hora de ${zona()}`})), radar(), canal(), produccion(), el('h2', {text: 'Resumen'}), resumen());
+      el('span', {class: 'am', text: `Días en hora de ${zona()}`})), lanzamiento() || '', radar(), canal(), produccion(), el('h2', {text: 'Resumen'}), resumen());
   }
 
   async function cargarEstudio() {

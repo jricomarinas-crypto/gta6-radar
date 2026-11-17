@@ -1,0 +1,114 @@
+/* ===== Identidad visual «Punto de Control» (va la última: ajusta colores, tipografía y acabados) =====
+   Paleta: noche de Leonida (fondo violeta muy oscuro) y atardecer de Vice (naranja → rosa → violeta).
+   Sin logos ni arte de Rockstar. Contrastes de texto ≥ 4.5:1 sobre las superficies. */
+:root{
+  --bg:#0B0A10; --surface:#14121B; --surface2:#1C1925; --border:#272330; --border2:#363044;
+  --text:#F6F4FA; --muted:#ABA5BA; --faint:#8C869C;
+  --accent:#F97316; --accent2:#EC4899; --accent3:#8B5CF6; --accent-soft:rgba(249,115,22,.14);
+  --sunset:linear-gradient(90deg,#F97316 0%,#EC4899 55%,#8B5CF6 100%);
+  --good:#22C55E; --warn:#F59E0B; --crit:#EF4444; --info:#60A5FA;
+  --r:14px; --sombra:0 1px 0 rgba(255,255,255,.035) inset,0 10px 30px -18px rgba(0,0,0,.8);
+  --display:'Inter Display','Inter',ui-sans-serif,system-ui,-apple-system,sans-serif;
+}
+html,body{font-family:'Inter',ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-feature-settings:"cv11","ss01"}
+body{background:
+  radial-gradient(1100px 460px at 78% -12%,rgba(236,72,153,.10),transparent 62%),
+  radial-gradient(900px 420px at 8% -14%,rgba(249,115,22,.10),transparent 60%),
+  var(--bg);background-attachment:fixed}
+::selection{background:rgba(236,72,153,.35)}
+*{scrollbar-color:var(--border2) transparent}
+:focus-visible{outline:2px solid var(--accent2);outline-offset:2px;border-radius:6px}
+
+/* ---- marca ---- */
+.logo{gap:12px}
+.radar{width:28px;height:28px;border:0;background:conic-gradient(from 180deg,#F97316,#EC4899,#8B5CF6,#F97316);
+  -webkit-mask:radial-gradient(circle,transparent 52%,#000 54%);mask:radial-gradient(circle,transparent 52%,#000 54%)}
+.radar::after{background:conic-gradient(from 0deg,transparent 0 290deg,rgba(255,255,255,.85) 360deg);-webkit-mask:none;mask:none}
+.nav-texto{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.marca-nombre{font-family:var(--display);font-weight:800;font-size:13.5px;letter-spacing:.06em;white-space:nowrap;
+  background:var(--sunset);-webkit-background-clip:text;background-clip:text;color:transparent}
+.marca-sub{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-top:3px}
+
+/* ---- barra lateral ---- */
+.nav{background:rgba(20,18,27,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.nav-top{padding:18px 14px}
+.grupo{border-bottom:0}
+.grupo > button{font-size:11px;letter-spacing:.12em;padding:14px 16px 6px;color:var(--faint)}
+.grupo > button .ico{display:inline-flex}
+.ico-svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.grupo > button:hover .ico-svg,.grupo > button[aria-expanded=true] .ico-svg{stroke:var(--accent)}
+.grupo ul{margin:0 8px 6px}
+.grupo li a,.grupo li .pronto{padding:7px 12px 7px 38px;border-left:0;border-radius:9px;color:#D9D5E3;margin:1px 0}
+.grupo li a:hover{background:var(--surface2)}
+.grupo li a[aria-current=page]{background:linear-gradient(90deg,rgba(249,115,22,.18),rgba(236,72,153,.08));color:#fff;
+  box-shadow:inset 3px 0 0 var(--accent)}
+body.nav-contraida .grupo > button{padding:14px 0}
+
+/* ---- cabecera ---- */
+.main header{background:rgba(11,10,16,.78);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom-color:var(--border);padding:14px 0}
+.pill{background:var(--surface);border-color:var(--border2);padding:5px 12px}
+#countdown{border:1px solid transparent;background:linear-gradient(var(--surface),var(--surface)) padding-box,var(--sunset) border-box;color:var(--text)}
+#countdown b{font-family:var(--display);font-weight:800;letter-spacing:.02em}
+.migas{margin:16px 0 14px}
+.migas-grupo{display:block}
+.vista-titulo{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.01em;margin:4px 0 0;color:var(--text);line-height:1.15}
+.demo{border-radius:12px}
+.avisos-datos:empty{display:none}
+.aviso-dato{background:rgba(96,165,250,.08);border:1px solid rgba(96,165,250,.35);color:#BFDBFE;padding:9px 13px;border-radius:12px;margin:12px 0 0;font-size:13px}
+
+/* ---- tarjetas ---- */
+.card,.kpi{border-radius:var(--r);border-color:var(--border);box-shadow:var(--sombra);
+  background:linear-gradient(180deg,rgba(255,255,255,.025),transparent 120px),var(--surface)}
+.card{padding:18px}
+.card:hover{border-color:var(--border2)}
+.card h2{font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.13em;color:var(--muted)}
+.card h2::before{content:"";width:14px;height:3px;border-radius:2px;background:var(--sunset);flex:none}
+.kpi{padding:14px 16px}
+.kpi .v,.kpi .n{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.02em}
+.graf-hoy .n{font-family:var(--display);font-size:30px;letter-spacing:-.02em}
+.hoy-cab h2{font-family:var(--display);font-weight:800;font-size:20px}
+.empty{border:1px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;color:var(--muted);background:rgba(255,255,255,.012)}
+.vt{font-weight:600}
+.res-item,.vid{border-top-color:var(--border)}
+.b{border-color:var(--border2);background:rgba(255,255,255,.02)}
+
+/* ---- controles ---- */
+.btn{border-radius:10px;border-color:var(--border2);background:var(--surface2);transition:border-color .15s,background .15s}
+.btn:hover{border-color:var(--faint);background:#221F2C}
+.btn.pri{background:linear-gradient(135deg,#F97316,#FB7185);border:0;color:#1A0A03;font-weight:700}
+.btn.pri:hover{background:linear-gradient(135deg,#FB923C,#F472B6)}
+select,input[type=search],input[type=text],input[type=url],input[type=date],input[type=datetime-local],textarea.campo{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text)}
+select:focus,input:focus,textarea:focus{border-color:var(--accent2);outline:none;box-shadow:0 0 0 3px rgba(236,72,153,.18)}
+.seg{border-radius:10px;border-color:var(--border2);background:var(--surface2)}
+.seg button{background:transparent}
+.seg button[aria-pressed=true]{background:linear-gradient(135deg,rgba(249,115,22,.22),rgba(236,72,153,.16));color:#fff}
+.chip{background:var(--surface2);border-color:var(--border2)}
+
+/* ---- gráficas (también fuera de .graf: Estadísticas usa el mismo dibujo) ---- */
+svg .linea{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+svg .area{stroke:none}
+svg .eje{stroke:rgba(255,255,255,.06);stroke-width:1}
+svg .punto{stroke:var(--surface);stroke-width:1.5}
+svg .cursor{stroke:rgba(255,255,255,.35);stroke-dasharray:3 3}
+svg .hueco{fill:rgba(255,255,255,.03)}
+svg text{fill:var(--faint);font-size:11.5px;font-variant-numeric:tabular-nums}
+#tip{background:rgba(28,25,37,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-color:var(--border2);border-radius:10px}
+
+/* ---- lanzamiento ---- */
+.lanz{border:1px solid transparent;background:linear-gradient(180deg,rgba(236,72,153,.06),transparent 160px) padding-box,
+  linear-gradient(var(--surface),var(--surface)) padding-box,var(--sunset) border-box}
+.lanz-cab{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.lanz-cab h2{margin:0;font-size:15px;color:var(--text);letter-spacing:.04em;text-transform:none}
+.lanz-cab h2::before{display:none}
+.lanz-dia{font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 12px;border-radius:999px;background:var(--sunset);color:#1A0A03}
+.lanz-lista{list-style:none;margin:0;padding:0;display:grid;gap:8px;font-size:13.5px}
+.lanz-lista a{font-weight:600}
+
+@media (prefers-reduced-motion:reduce){.radar::after{animation:none}.btn{transition:none}}
+@media (max-width:900px){.vista-titulo{font-size:24px}.card{padding:15px}}
+
+/* nada se sale de la pantalla en el móvil: los selectores con nombres largos se recortan */
+select,input,textarea{max-width:100%;min-width:0}
+.inv-form > *,.filters > *{min-width:0;max-width:100%}

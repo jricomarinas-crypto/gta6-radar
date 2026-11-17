@@ -140,7 +140,7 @@ const Investigar = (() => {
     tema.addEventListener('change', () => { n.tema = tema.value; pintarNoticias(); });
     caja.replaceChildren(el('div', {class: 'card'},
       el('div', {class: 'inv-form'}, vistas, fuente, tema, el('span', {class: 'am', text: `${d.total} noticia(s)` + (d.demo ? ' · DEMOSTRACIÓN' : '')})),
-      el('p', {class: 'am', text: 'Del medio solo tenemos titular y extracto: abre el original para leer el artículo completo. La agrupación de coberturas de una misma noticia llega en la fase 2.'}),
+      el('p', {class: 'am', text: 'Del medio solo tenemos titular y extracto: abre el original para leer el artículo completo. Aún no se agrupan las coberturas de una misma noticia: cada medio sale por separado.'}),
       ...(d.noticias.length ? d.noticias.map(x => el('article', {class: 'res-item'},
         el('div', {class: 'meta'}, el('span', {text: x.fuente || '—'}), el('span', {text: 'publicado ' + fecha(x.publicado_en)}),
           x.detectado_en ? el('span', {text: 'detectado ' + fecha(x.detectado_en)}) : null,
@@ -241,7 +241,7 @@ const Investigar = (() => {
     caja.replaceChildren(el('div', {class: 'card'}, el('a', {href: '#/investigar/investigaciones', text: '← Mis investigaciones'}),
       el('h2', {style: 'margin-top:8px', text: i.titulo}), el('div', {class: 'inv-form'}, el('label', {}, 'Estado', estado),
         el('span', {class: 'am', text: `creada ${fecha(i.creada_en)} · última actividad ${fecha(i.actividad_en)}`})), preguntarEnChat(i), piezas, tabs, cuerpo));
-    $('#migas').querySelector('b').textContent = i.titulo;
+    $('#migas').querySelector('h1').textContent = i.titulo;
   }
   function pestanaResumen(i) {
     const campos = [['pregunta', 'Qué estoy investigando (la pregunta)'], ['descripcion', 'Descripción'], ['que_se', 'Qué sé'],

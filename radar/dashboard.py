@@ -17,7 +17,7 @@ from .db import jload, kv_get
 AQUI = Path(__file__).parent
 TEMPLATE = AQUI / "dashboard_template.html"
 PANEL = AQUI / "panel"
-CSS = ["base.css", "app.css"]                              # orden de carga
+CSS = ["base.css", "app.css", "marca.css"]                # orden de carga (marca.css: identidad visual, va la última)
 JS = ["radar.js", "util.js", "graficas.js", "hoy.js", "investigar.js", "canal.js", "crear.js", "nav.js"]       # radar.js define DATA y utilidades; nav.js arranca
 
 
@@ -25,10 +25,28 @@ def _leer(nombres: list[str]) -> str:
     return "\n".join((PANEL / n).read_text(encoding="utf-8").rstrip("\n") for n in nombres if (PANEL / n).exists())
 
 
+FUENTES = [("Inter", 400, "Inter-Regular.woff2"), ("Inter", 600, "Inter-SemiBold.woff2"),
+           ("Inter Display", 800, "InterDisplay-ExtraBold.woff2")]
+
+
+def _fuentes_css() -> str:
+    """Inter (licencia OFL, ver radar/panel/fuentes/LICENCIA.txt) metida en el propio HTML: sin CDN ni peticiones fuera.
+    Son versiones reducidas a caracteres latinos (≈ 22 KB cada una)."""
+    import base64
+    out = []
+    for familia, peso, archivo in FUENTES:
+        f = PANEL / "fuentes" / archivo
+        if f.exists():
+            b64 = base64.b64encode(f.read_bytes()).decode()
+            out.append(f"@font-face{{font-family:'{familia}';font-weight:{peso};font-style:normal;font-display:swap;"
+                       f"src:url(data:font/woff2;base64,{b64}) format('woff2')}}")
+    return "\n".join(out)
+
+
 def html(data: dict) -> str:
     payload = json.dumps(data, ensure_ascii=False, default=str).replace("</", "<\\/")
     t = TEMPLATE.read_text(encoding="utf-8")
-    t = t.replace("/*__CSS__*/", _leer(CSS), 1).replace("/*__JS__*/", _leer(JS), 1)
+    t = t.replace("/*__CSS__*/", _fuentes_css() + "\n" + _leer(CSS), 1).replace("/*__JS__*/", _leer(JS), 1)
     return t.replace("/*__DATA__*/null", payload, 1)
 
 
@@ -56,6 +74,12 @@ def build(con, out_dir: Path | None = None, demo: bool = False) -> Path:
         "produccion_demo": jload(kv_get(con, "demo_produccion"), None) if demo else None,
     }
     data["fuentes"] = fuentes.resumen(con)
+    # avisos honestos sobre lo que falta (nunca se rellena con datos inventados)
+    data["avisos_datos"] = [] if demo else [m for c, m in (
+        (con.execute("SELECT COUNT(*) FROM videos").fetchone()[0] == 0,
+         "El Radar aún no trae vídeos de YouTube: falta YOUTUBE_API_KEY en GitHub Secrets (o se agotó la cuota del día). Las noticias sí son reales."),
+        (con.execute("SELECT COUNT(*) FROM news").fetchone()[0] == 0, "Aún no hay noticias recopiladas."),
+    ) if c]
     data["datos_antiguos_horas"] = cfg().get("panel", {}).get("datos_antiguos_horas", 3)
     out = out_dir / "index.html"
     out.write_text(html(data), encoding="utf-8")

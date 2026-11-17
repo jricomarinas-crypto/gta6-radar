@@ -218,6 +218,7 @@ function renderNews(cut) {
 function renderStatic() {
   $('#chan').textContent = `${DATA.channel?.nombre || ''} · ${DATA.channel?.subtitulo || ''}`;
   $('#demo').hidden = !DATA.demo;
+  $('#avisos-datos').replaceChildren(...(DATA.avisos_datos || []).map(m => el('div', {class: 'aviso-dato', text: m})));
   const upd = new Date(DATA.generated_at);
   $('#updated').replaceChildren('Actualizado ', el('b', {text: ago(DATA.generated_at)}));
   $('#updated').title = upd.toLocaleString('es-ES');

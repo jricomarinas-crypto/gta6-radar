@@ -50,6 +50,16 @@ def main():
     print(f"Formato: {t['formato']} · variante: {st['variante']} · plataformas: {', '.join(t['plataformas'])}")
     for f in t["idea"].get("fuentes", []):
         print(f"Señal (solo contexto, no es una fuente de hechos): {f.get('titulo')} {f.get('url')}")
+    if t["idea"].get("dossier_id"):  # viene de una investigación: el guion usa ESTAS afirmaciones con ESTAS etiquetas
+        i = t["idea"]
+        print(f"\nDOSSIER v{i.get('dossier_n')} de la investigación {i.get('investigacion_id')} (verificado por Javier):")
+        for a in i.get("afirmaciones", []):
+            print(f"  [{a['etiqueta']}] {a['texto']} · {a['estado']}" + (f"\n      fuentes: {', '.join(a['fuentes'])}" if a["fuentes"] else ""))
+        for x in i.get("no_afirmar", []):
+            print(f"  [NO AFIRMAR · contradicho] {x}")
+        for x in i.get("avisos", []):
+            print(f"  Aviso: {x}")
+        print("  Vuelve a comprobar la fecha de cada dato antes de escribir; si algo cambió, dilo y no lo cambies tú.")
     print("\n" + REGLAS + "\n\nESQUEMA: ver la cabecera de fabrica/guion.py")
     print(f"\nGuárdalo en:\n  {flujo.ruta_guion(t)}\nY compruébalo con:\n  python -m fabrica.encargo --validar {flujo.ruta_guion(t)}")
 

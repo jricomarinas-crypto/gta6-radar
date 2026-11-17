@@ -15,6 +15,21 @@ POST /api/investigaciones/<id>/fuentes/<ref>        {aporte}
 POST /api/investigaciones/<id>/fuentes/<ref>/quitar
 POST /api/investigaciones/<id>/notas {texto, tipo, id?}
 POST /api/investigaciones/<id>/notas/<nota>/borrar
+Fase 2A:
+GET  /api/afirmaciones?estado=&inv=&q=     GET /api/afirmaciones/<id>
+POST /api/afirmaciones {texto, inv_id?, quien_primero?, fecha_origen?, ref_origen?, nota?}
+POST /api/afirmaciones/<id> {texto?, quien_primero?, fecha_origen?, nota?}
+POST /api/afirmaciones/<id>/estado {estado, nota}
+POST /api/afirmaciones/<id>/evidencias {ref_id, relacion, independiente?, nota?}
+POST /api/afirmaciones/<id>/evidencias/<ref>/quitar
+POST /api/investigaciones/<id>/afirmaciones/<afirm>[/quitar]      enlazar / desenlazar
+GET  /api/cronologia?inv=&tipo=&desde=&hasta=&fuente=&tema=&ocultos=1
+POST /api/cronologia {tipo, titulo, inv_id?, ref_id?, ocurrio_en?, publicado_en?, nota?}
+POST /api/cronologia/<id> {titulo?, tipo?, nota?, ocurrio_en?, oculto?}    POST /api/cronologia/<id>/borrar
+GET  /api/investigaciones/<id>/dossier          vista previa (sin guardar)
+POST /api/investigaciones/<id>/dossier          guarda una versión congelada
+GET  /api/dossiers?inv=                          GET /api/dossiers/<id>
+POST /api/dossiers/<id>/idea {variante, plataformas}   crea la pieza en el Estudio (etapa Idea; no aprueba nada)
 Devuelve (código, datos) o None si la ruta no es suya.
 """
 from __future__ import annotations
@@ -27,6 +42,8 @@ from radar.db import jload
 from radar.trends import TOPIC_LABEL
 
 from . import busqueda, db, ideas
+from . import dossier as dos
+from . import verificacion as ver
 from . import investigacion as inv
 
 RE_INV = r"([0-9a-f]{6})"
@@ -92,7 +109,35 @@ def get(path: str, query: str):
     m = re.fullmatch(r"/api/investigaciones/" + RE_INV, path)
     if m:
         d = inv.inv(con, m.group(1), completa=True)
+        if d:
+            d["n_afirmaciones"] = len(ver.lista_afirm(con, inv_id=m.group(1)))
+            d["piezas"] = [p for x in dos.lista(con, m.group(1)) for p in x["piezas"]]
         return (200, d) if d else (404, {"error": "Esa investigación no existe."})
+    if path == "/api/afirmaciones":
+        return 200, {"afirmaciones": ver.lista_afirm(con, q.get("estado", ""), q.get("inv", ""), q.get("q", "")),
+                     "estados": ver.ESTADOS, "relaciones": ver.RELACIONES, "dias_revision": ver.DIAS_REVISION}
+    m = re.fullmatch(r"/api/afirmaciones/(\d+)", path)
+    if m:
+        d = ver.afirm(con, int(m.group(1)), completa=True)
+        return (200, d) if d else (404, {"error": "Esa afirmación no existe."})
+    if path == "/api/cronologia":
+        return 200, {"eventos": ver.cronologia(con, q.get("inv", ""), q.get("tipo", ""), q.get("desde", ""), q.get("hasta", ""),
+                                               q.get("fuente", ""), q.get("tema", ""), q.get("ocultos") == "1"),
+                     "tipos": ver.TIPOS_EVENTO, "temas": TOPIC_LABEL}
+    m = re.fullmatch(r"/api/investigaciones/" + RE_INV + r"/dossier", path)
+    if m:
+        try:
+            d = dos.generar(con, m.group(1))
+        except inv.NoValido as e:
+            return 404, {"error": str(e)}
+        return 200, {"contenido": d, "markdown": dos.markdown(d), "versiones": dos.lista(con, m.group(1)),
+                     "variantes": {k: v[1] for k, v in ideas.VARIANTES.items()}, "plataformas": ideas.PLATAFORMAS}
+    if path == "/api/dossiers":
+        return 200, {"dossiers": dos.lista(con, q.get("inv", ""))}
+    m = re.fullmatch(r"/api/dossiers/(\d+)", path)
+    if m:
+        d = dos.obtener(con, int(m.group(1)))
+        return (200, d) if d else (404, {"error": "Ese dossier no existe."})
     return None
 
 
@@ -115,6 +160,40 @@ def post(path: str, body: dict):
             return 200, inv.actualizar_ref(con, rid, **{k: body.get(k) for k in ("guardada", "leida", "archivada", "nota", "etiquetas")})
         if path == "/api/investigaciones":
             return 200, inv.crear_inv(con, body.get("titulo", ""), body.get("pregunta", ""), body.get("descripcion", ""))
+        if path == "/api/afirmaciones":
+            return 200, ver.crear_afirm(con, body.get("texto", ""), body.get("inv_id") or None, body.get("quien_primero", ""),
+                                        body.get("fecha_origen", ""), body.get("ref_origen") or None, body.get("nota", ""))
+        m = re.fullmatch(r"/api/afirmaciones/(\d+)(?:/(estado|evidencias)(?:/(\d+)/quitar)?)?", path)
+        if m:
+            aid, sub, rid = int(m.group(1)), m.group(2), m.group(3)
+            if not sub:
+                return 200, ver.editar_afirm(con, aid, **{k: body.get(k) for k in ("texto", "quien_primero", "fecha_origen", "nota")})
+            if sub == "estado":
+                return 200, ver.cambiar_estado(con, aid, body.get("estado", ""), body.get("nota", ""))
+            if rid:
+                return 200, ver.quitar_evidencia(con, aid, int(rid))
+            return 200, ver.evidencia(con, aid, int(body.get("ref_id") or 0), body.get("relacion", ""),
+                                      bool(body.get("independiente")), body.get("nota", ""))
+        m = re.fullmatch(r"/api/investigaciones/" + RE_INV + r"/afirmaciones/(\d+)(/quitar)?", path)
+        if m:
+            if m.group(3):
+                return 200, ver.desenlazar(con, m.group(1), int(m.group(2)))
+            return 200, ver.enlazar(con, m.group(1), int(m.group(2)))
+        if path == "/api/cronologia":
+            return 200, ver.evento(con, body.get("tipo", ""), body.get("titulo", ""), body.get("inv_id") or None,
+                                   ref_id=body.get("ref_id") or None, ocurrio_en=body.get("ocurrio_en"),
+                                   publicado_en=body.get("publicado_en"), nota=body.get("nota", ""))
+        m = re.fullmatch(r"/api/cronologia/(\d+)(/borrar)?", path)
+        if m:
+            if m.group(2):
+                return 200, ver.borrar_evento(con, int(m.group(1)))
+            return 200, ver.editar_evento(con, int(m.group(1)), **{k: body.get(k) for k in ("titulo", "tipo", "nota", "ocurrio_en", "oculto")})
+        m = re.fullmatch(r"/api/investigaciones/" + RE_INV + r"/dossier", path)
+        if m:
+            return 200, dos.guardar(con, m.group(1))
+        m = re.fullmatch(r"/api/dossiers/(\d+)/idea", path)
+        if m:
+            return 200, dos.crear_idea(con, int(m.group(1)), body.get("variante", ""), body.get("plataformas") or [])
         m = re.fullmatch(r"/api/investigaciones/" + RE_INV + r"(?:/(fuentes|notas)(?:/(\d+))?(?:/(quitar|borrar))?)?", path)
         if m:
             iid, sub, num, accion = m.groups()

@@ -16,6 +16,8 @@ from radar.db import iso, jdump, jload
 
 TIPOS = ("noticia", "video", "creador", "enlace")
 ESTADOS = ("abierta", "recopilando", "contrastando", "lista", "archivada")
+ESTADOS_NOMBRE = {"abierta": "Abierta", "recopilando": "Recopilando fuentes", "contrastando": "Contrastando",
+                  "lista": "Lista para convertir en contenido", "archivada": "Archivada"}
 TIPOS_NOTA = ("apunte", "pregunta", "idea", "enfoque")
 MAX = {"titulo": 200, "texto": 5000, "nota": 2000, "aporte": 1000, "corto": 300}
 
@@ -233,6 +235,10 @@ def actualizar_inv(con, iid: str, **campos) -> dict:
                  ("que_falta", MAX["texto"]), ("conclusion", MAX["texto"])):
         if campos.get(k) is not None:
             cambios[k] = _txt(campos[k], n)
+    if cambios.get("estado") and cambios["estado"] != inv(con, iid)["estado"]:
+        from .verificacion import evento
+        evento(con, "actualizacion", f"Estado: {ESTADOS_NOMBRE.get(cambios['estado'], cambios['estado'])}", inv_id=iid,
+               automatico=True, commit=False)
     if cambios:
         cambios["actividad_en"] = iso()
         con.execute(f"UPDATE investigaciones SET {', '.join(k + '=?' for k in cambios)} WHERE id=?", (*cambios.values(), iid))
@@ -246,8 +252,13 @@ def anadir_ref(con, iid: str, rid: int, aporte: str = "") -> dict:
     if not ref(con, rid):
         raise NoValido("Esa referencia no existe.")
     ahora = iso()
-    con.execute("""INSERT INTO inv_refs(inv_id,ref_id,aporte,consultada_en,anadida_en) VALUES(?,?,?,?,?)
-                   ON CONFLICT(inv_id,ref_id) DO NOTHING""", (iid, rid, _txt(aporte, MAX["aporte"]), ahora, ahora))
+    nueva = con.execute("""INSERT INTO inv_refs(inv_id,ref_id,aporte,consultada_en,anadida_en) VALUES(?,?,?,?,?)
+                   ON CONFLICT(inv_id,ref_id) DO NOTHING""", (iid, rid, _txt(aporte, MAX["aporte"]), ahora, ahora)).rowcount
+    if nueva:  # en la cronología con sus fechas reales (publicado / detectado); «ocurrió» se deja vacío
+        from .verificacion import evento
+        r = ref(con, rid)
+        evento(con, "publicacion", r["titulo"] or "Fuente añadida", inv_id=iid, ref_id=rid,
+               publicado_en=r["publicado_en"], detectado_en=r["detectado_en"], automatico=True, commit=False)
     con.commit()
     _tocar(con, iid)
     return inv(con, iid, completa=True)

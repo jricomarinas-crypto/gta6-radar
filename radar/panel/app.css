@@ -123,3 +123,21 @@ body.con-estudio .solo-publico{display:none}
 textarea.campo{width:100%;min-height:72px;background:var(--surface);color:var(--text);border:1px solid var(--border2);border-radius:8px;padding:8px 10px;font:inherit;font-size:13px}
 .guardado-ok{color:#86EFAC;font-size:12px}
 .err-campo{color:#FCA5A5;font-size:12px}
+
+/* ---- Fase 2A: afirmaciones, cronología y dossier ---- */
+.afirm .vt{font-size:15px}
+.cuentas{font-size:12px;color:var(--muted,#9aa3b2);margin:4px 0}
+ul.evid,ul.hist{list-style:none;padding:0;margin:6px 0;display:grid;gap:6px}
+ul.evid li,ul.hist li{font-size:13px;overflow-wrap:anywhere}
+.b.s-bad{background:rgba(239,68,68,.15);color:#f87171}
+.timeline{list-style:none;margin:10px 0 0;padding:0 0 0 16px;border-left:2px solid #2a3140}
+.timeline .ev{position:relative;padding:0 0 14px 10px}
+.timeline .ev::before{content:"";position:absolute;left:-23px;top:4px;width:12px;height:12px;border-radius:50%;background:#64748b}
+.timeline .ev-confirmacion::before{background:#22c55e}.timeline .ev-desmentido::before{background:#ef4444}
+.timeline .ev-rumor::before{background:#F97316}.timeline .ev-anuncio::before{background:#38bdf8}
+.timeline .ev-oculto{opacity:.5}
+.dossier h3{margin:12px 0 4px;font-size:14px}
+.dossier ul{margin:0;padding-left:18px}
+.aviso{background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.4);border-radius:8px;padding:8px 10px;margin:8px 0;font-size:13px}
+pre.md-pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;max-height:420px;overflow:auto;background:rgba(0,0,0,.25);padding:10px;border-radius:8px}
+details>summary{cursor:pointer;margin:6px 0}

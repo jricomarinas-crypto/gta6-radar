@@ -17,7 +17,8 @@ from radar.db import jload
 from . import rutas
 
 TIPOS = {"noticia": "Noticia", "video": "Vídeo", "creador": "Creador", "briefing": "Briefing",
-         "referencia": "Referencia guardada", "nota": "Nota propia", "investigacion": "Investigación"}
+         "referencia": "Referencia guardada", "nota": "Nota propia", "investigacion": "Investigación",
+         "afirmacion": "Afirmación", "dossier": "Dossier"}
 MAX_EDAD_S = 60
 
 
@@ -72,6 +73,12 @@ def reconstruir(radar, estudio, demo: bool = False) -> int:
             add("investigacion", i["id"], i["titulo"],
                 " ".join(filter(None, [i["pregunta"], i["descripcion"], i["que_se"], i["que_falta"], i["conclusion"]])),
                 "", "Tus investigaciones", i["actividad_en"], i["creada_en"], privado=1)
+        for a in estudio.execute("SELECT * FROM afirmaciones"):
+            add("afirmacion", str(a["id"]), a["texto"], f"{a['quien_primero'] or ''} {a['nota'] or ''} {a['estado']}", "",
+                "Rumores y verificación", a["fecha_origen"] or "", a["creada_en"], privado=1)
+        for d in estudio.execute("SELECT d.*, i.titulo it FROM dossiers d JOIN investigaciones i ON i.id=d.inv_id"):
+            add("dossier", d["inv_id"], f"Dossier v{d['n']} · {d['it']}", d["markdown"][:4000], "", "Tus dossiers",
+                d["creado_en"], d["creado_en"], privado=1)
     con.executemany("INSERT INTO docs VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)", filas)
     con.execute("INSERT OR REPLACE INTO meta VALUES('construido', ?)", (str(time.time()),))
     con.commit()

@@ -399,7 +399,9 @@ function piezaCard(p) {
   c.append(el('div', {class: 'vt', text: titulo}),
     el('div', {class: 'meta'}, el('span', {text: `${p.formato} · ${p.variante_nombre}`}),
       el('span', {text: p.plataformas.map(x => FAB.plataformas[x] || x).join(' + ')}), el('span', {text: `encargo ${p.id}`}),
-      p.legado ? el('span', {class: 'b', text: 'antes del flujo de aprobación'}) : null),
+      p.legado ? el('span', {class: 'b', text: 'antes del flujo de aprobación'}) : null,
+      p.idea.investigacion_id ? el('a', {class: 'b s-info', href: '#/investigar/investigaciones/' + p.idea.investigacion_id,
+        text: `viene de una investigación · dossier v${p.idea.dossier_n}`}) : null),
     pasos(p), el('div', {class: 'sig'}, el('b', {text: p.etapa + ': '}), p.siguiente));
   const acciones = el('div', {class: 'row'});
   const v = p.version;

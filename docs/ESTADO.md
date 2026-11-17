@@ -64,9 +64,32 @@
   notas, continuar. Corregido de paso: la miga de pan repetía la sección.
 - Limitación: los avisos usan las ventanas del navegador (prompt/confirm); quedan bien pero son sencillas.
 
+### Centro de investigación — fase 2A HECHA Y PROBADA (17-nov)
+- **Afirmaciones** (`estudio/verificacion.py`): la unidad es la afirmación concreta. Evidencias a favor / en contra /
+  solo repite (las que repiten nunca cuentan como independientes). 6 estados manuales, sin puntuación de «verdad».
+  «Confirmado» exige una evidencia a favor independiente y una nota; «Contradicho», una evidencia en contra y una
+  nota. Historial que solo se añade. Pestaña en cada investigación + **Investigar › Rumores y verificación**
+  (filtros; «revisión antigua» a los 7 días).
+- **Cronología**: tres fechas (ocurrió / publicado / detectado), nunca inventadas. Eventos automáticos al añadir una
+  fuente, crear una afirmación, confirmarla o contradecirla y cambiar el estado de la investigación (se ocultan, no se
+  borran); manuales editables. Pestaña + **Investigar › Cronología** con filtros. Las fuentes añadidas antes de la 2A
+  no tienen evento (no se reconstruyen fechas que no se registraron).
+- **Dossier** (`estudio/dossier.py`): generado por código, sin IA. Afirmaciones por estado con su etiqueta del guion
+  (Confirmado→CONFIRMADO, Atribuida→REPORTADO, resto→RUMOR, Contradicho→no se afirma salvo «Verdad o bulo»),
+  incertidumbres aparte, fuentes y cronología. Versiones congeladas, Copiar Markdown y Descargar .md.
+  **Crear › Guiones y dossiers** lista los dossiers y sus piezas.
+- **Paso a la Fábrica**: «Crear idea de vídeo» desde una versión del dossier; muestra antes lo que recibirá el guion.
+  La pieza entra en la etapa Idea (no se aprueba ni publica nada) con investigación y dossier en la idea; no se duplica.
+  `python -m fabrica.encargo <id>` imprime el dossier (etiquetas, fuentes, «NO AFIRMAR»). La tarjeta de la pieza
+  enlaza a su investigación. El buscador también encuentra afirmaciones y dossiers.
+- Probado: `tests/test_verificacion.py` (4) + 21 anteriores = 25 en verde; navegador (Estudio aislado) en escritorio y
+  móvil sin scroll horizontal: crear afirmación, bloqueo de Confirmado sin evidencia, evidencia, confirmar,
+  cronología, dossier, crear idea, pieza en En producción con su origen.
+
 ### Pendiente del rediseño / investigación
-- Fase 2 (afirmaciones y verificación, cronología, dossier, paso a Fábrica, estadísticas) y fase 3 según la
-  propuesta del 17-nov.
+- **Fase 2B** (Mi canal): estadísticas, registro manual de TikTok, lo que más rinde, mis vídeos, colaboradores, fuentes
+  vigiladas.
+- Fase 3: asistente de investigación, búsquedas externas (con tu OK), Revisión, Calendario, atajos.
 
 ### Documentos
 - `README.md` sustituido por la versión de Javier, ampliada con Estudio, modo suscripción, fondo real y tu voz.

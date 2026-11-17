@@ -95,6 +95,38 @@ CREATE TABLE IF NOT EXISTS exportaciones (
     subida_en TEXT, url TEXT,
     PRIMARY KEY (version_id, plataforma)
 );
+-- Fase 2A: afirmaciones (la unidad de verificación), su historial, cronología y dossiers congelados
+CREATE TABLE IF NOT EXISTS afirmaciones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, texto TEXT NOT NULL, quien_primero TEXT,
+    fecha_origen TEXT,                  -- vacía si no se conoce: nunca se inventa
+    ref_origen INTEGER, estado TEXT NOT NULL DEFAULT 'pendiente', nota TEXT,
+    creada_en TEXT, revisada_en TEXT
+);
+CREATE TABLE IF NOT EXISTS afirm_evidencias (
+    afirmacion_id INTEGER NOT NULL, ref_id INTEGER NOT NULL,
+    relacion TEXT NOT NULL,             -- a_favor | en_contra | repite
+    independiente INTEGER DEFAULT 0, nota TEXT, anadida_en TEXT,
+    PRIMARY KEY (afirmacion_id, ref_id)
+);
+CREATE TABLE IF NOT EXISTS afirm_historial (   -- solo se añade: no se edita ni se borra
+    id INTEGER PRIMARY KEY AUTOINCREMENT, afirmacion_id INTEGER NOT NULL, campo TEXT NOT NULL,
+    antes TEXT, despues TEXT, nota TEXT, autor TEXT NOT NULL DEFAULT 'Javier', cuando TEXT
+);
+CREATE TABLE IF NOT EXISTS inv_afirm (
+    inv_id TEXT NOT NULL, afirmacion_id INTEGER NOT NULL, anadida_en TEXT,
+    PRIMARY KEY (inv_id, afirmacion_id)
+);
+CREATE TABLE IF NOT EXISTS cronologia (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, inv_id TEXT, afirmacion_id INTEGER, ref_id INTEGER,
+    tipo TEXT NOT NULL, titulo TEXT NOT NULL, nota TEXT,
+    ocurrio_en TEXT, publicado_en TEXT, detectado_en TEXT,   -- tres fechas distintas; vacías si no se conocen
+    automatico INTEGER DEFAULT 0, oculto INTEGER DEFAULT 0, creado_en TEXT
+);
+CREATE TABLE IF NOT EXISTS dossiers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, inv_id TEXT NOT NULL, n INTEGER NOT NULL,
+    contenido TEXT NOT NULL, markdown TEXT NOT NULL, creado_en TEXT,
+    UNIQUE (inv_id, n)
+);
 """
 
 COLUMNAS_TRABAJOS = {
